@@ -1,0 +1,13 @@
+name: tchipi8
+version: 0.1.0
+
+authors:
+  - your-name-here <14844142+kwalter94@users.noreply.github.com>
+
+targets:
+  tchipi8:
+    main: src/tchipi8.cr
+
+crystal: '>= 1.12.2'
+
+license: MIT
