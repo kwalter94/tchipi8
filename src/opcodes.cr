@@ -1,5 +1,4 @@
 require "./chip8"
-require "./operations"
 
 module Tchipi8
   extend self
