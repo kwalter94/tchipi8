@@ -92,6 +92,18 @@ module Tchipi8
     Opcode.new(MOV, "mov", 605, ->(_chip8 : Chip8, _instruction : UInt16) {}),
   ]
 
+  def extract_operand1(instruction : UInt16) : UInt16
+    (instruction & 0x0F00) >> 8
+  end
+
+  def extract_operand2(instruction : UInt16) : UInt16
+    (instruction & 0x00F0) >> 4
+  end
+
+  def extract_long_operand(instruction : UInt16) : UInt16
+    instruction & 0x0FFF
+  end
+
   def clear_screen(chip8 : Chip8); end
 
   def jump(chip8 : Chip8, instruction : UInt16); end
