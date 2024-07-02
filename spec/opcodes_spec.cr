@@ -3,7 +3,7 @@ require "./spec_helper"
 describe Tchipi8 do
   context :extract_operand1 do
     it "extracts first operand from instruction" do
-      Tchipi8.extract_operand1(0x8A69).should eq(0x0008)
+      Tchipi8.extract_operand1(0x8A69).should eq(0x000A)
       Tchipi8.extract_operand1(0x1042).should eq(0)
     end
   end
