@@ -1,3 +1,5 @@
+require "./display"
+
 module Tchipi8
   ADDRESS_MASK = 0x0FFF # Addresses are 12 bytes long
   MAX_RAM = 4096  # Bytes
@@ -6,6 +8,7 @@ module Tchipi8
 
 
   class Chip8
+    property display : Display
     property pc : UInt16
     property l : UInt16
     property v : Array(UInt8)
@@ -15,13 +18,14 @@ module Tchipi8
     property stack : Array(UInt16)
 
     def initialize
+      @display = Display.new
       @pc = 0
       @l = 0
-      @v = Array.new(VREG_COUNT, 0)
+      @v = Array(UInt8).new(VREG_COUNT, 0)
       @sound_timer = 0
       @delay_timer = 0
-      @memory = Array.new(MAX_RAM, 0)
-      @stack = Array.new(MAX_STACK, 0)
+      @memory = Array(UInt8).new(MAX_RAM, 0)
+      @stack = Array(UInt16).new(MAX_STACK, 0)
     end
   end
 end

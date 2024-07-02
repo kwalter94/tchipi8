@@ -1,8 +1,9 @@
+---
 name: tchipi8
 version: 0.1.0
 
 authors:
-  - your-name-here <14844142+kwalter94@users.noreply.github.com>
+  - Walter Kaunda <14844142+kwalter94@users.noreply.github.com>
 
 targets:
   tchipi8:
@@ -11,3 +12,7 @@ targets:
 crystal: '>= 1.12.2'
 
 license: MIT
+
+dependencies:
+  sdl-crystal-bindings:
+    github: Hadeweka/SDL-Crystal-Bindings
