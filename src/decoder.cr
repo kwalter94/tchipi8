@@ -14,12 +14,10 @@ module Tchipi8
     def self.decode(instruction : UInt16) : Opcodes::Opcode
       case instruction & 0xF000
       when 0x0000
-        if instruction == Opcodes::CLS.opcode
-          Opcodes::CLS
-        elsif instruction == Opcodes::RET.opcode
-          Opcodes::RET
-        else
-          Opcodes::JMPNAS
+        case
+        when instruction == Opcodes::CLS.opcode then Opcodes::CLS
+        when instruction == Opcodes::RET.opcode then Opcodes::RET
+        else Opcodes::JMPNAS
         end
       when 0x1000 then Opcodes::JMP
       when 0x2000 then Opcodes::CALL
