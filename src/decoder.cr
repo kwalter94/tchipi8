@@ -14,11 +14,23 @@ module Tchipi8
     def self.decode(instruction : UInt16) : Opcodes::Opcode
       case instruction & 0xF000
       when 0x0000
-        return Opcodes::CLS if instruction == Opcodes::CLS.opcode
+        if instruction == Opcodes::CLS.opcode
+          Opcodes::CLS
+        elsif instruction == Opcodes::RET.opcode
+          Opcodes::RET
+        else
+          Opcodes::JMPNAS
+        end
+      when 0x1000 then Opcodes::JMP
+      when 0x2000 then Opcodes::CALL
+      when 0x3000 then Opcodes::SKIPIFEQ
+      when 0x4000 then Opcodes::SKIPIFNEQ
+      when 0x5000
+        raise InvalidInstruction.new(instruction) unless (instruction & 0x000F).zero?
 
-        return Opcodes::RET if instruction == Opcodes::RET.opcode
-
-        return Opcodes::JMPNAS
+        Opcodes::SKIPIFEQV
+      when 0x6000 then Opcodes::SET
+      when 0x7000 then Opcodes::ADD
       else
         raise InvalidInstruction.new(instruction)
       end

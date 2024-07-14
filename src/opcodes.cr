@@ -12,13 +12,6 @@ module Tchipi8
     # nibbles of the opcode).
     #   0001
     # Clear screen
-    JMP = 0x1FFF.to_u16        # Jump to address
-    CALL = 0x2FFF.to_u16       # Push current address onto stack and call subroutine
-    SKIPIFEQ = 0x3FFF.to_u16   # Skip next opcode if vX register is equal to k
-    SKIPIFNEQ = 0x4FFF.to_u16  # Skip next opcode if vX is not equal to k
-    SKIPIFEQV = 0x5FF0.to_u16  # Skip next opcode if register vX == vY
-    SET = 0x6FFF.to_u16        # Set register vX to k
-    ADD = 0x7FFF.to_u16        # Add k to register vX
     COPY = 0x8FF0.to_u16       # Copy value from register vY into vX
     OR = 0x8FF1.to_u16         # Set vX to result of vX | vY
     AND = 0x8FF2.to_u16        # Set vX to result of vX & vY
@@ -66,13 +59,13 @@ module Tchipi8
     CLS = define_opcode(0x00E0.to_u16, "cls", 109, clear_screen)
     RET = define_opcode(0x00EE.to_u16, "ret", 105, return_from_sub)
     JMPNAS = define_opcode(0x0FFF.to_u16, "jmpnas", 105, jump_to_nas)
-    # JMP = define_opcode(0x1FFF.to_u16, "jmp", 105, ->(chip8 : Chip8, instruction : UInt16) { jump(chip8, instruction) })
-    # CALL = define_opcode(0x2FFF.to_u16, "call", 105, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # SKIPIFEQ = define_opcode(0x3FFF.to_u16, "skipifeq", 55, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # SKIPIFNEQ = define_opcode(0x4FFF.to_u16, "skipifneq", 55, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # SKIPIFEQV = define_opcode(0x5FF0.to_u16, "skipifeqv", 73, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # SET = define_opcode(0x6FFF.to_u16, "set", 27, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # ADD = define_opcode(0x7FFF.to_u16, "add", 45, ->(_chip8 : Chip8, _instruction : UInt16) {})
+    JMP = define_opcode(0x1FFF.to_u16, "jmp", 105, jump)
+    CALL = define_opcode(0x2FFF.to_u16, "call", 105, call)
+    SKIPIFEQ = define_opcode(0x3FFF.to_u16, "skipifeq", 55, skip_if_vx_eq_const)
+    SKIPIFNEQ = define_opcode(0x4FFF.to_u16, "skipifneq", 55, skip_if_vx_neq_const)
+    SKIPIFEQV = define_opcode(0x5FF0.to_u16, "skipifeqv", 73, skip_if_vx_eq_vy)
+    SET = define_opcode(0x6FFF.to_u16, "set", 27, set_vx_to_const)
+    ADD = define_opcode(0x7FFF.to_u16, "add", 45, add_const_to_vx)
     # COPY = define_opcode(0x8FF0.to_u16, "copy", 200, ->(_chip8 : Chip8, _instruction : UInt16) {})
     # OR = define_opcode(0x8FF1.to_u16, "or", 200, ->(_chip8 : Chip8, _instruction : UInt16) {})
     # AND = define_opcode(0x8FF2.to_u16, "and", 200, ->(_chip8 : Chip8, _instruction : UInt16) {})
@@ -122,6 +115,34 @@ module Tchipi8
 
     # Jump to native assembler subroutine
     def jump_to_nas(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Jump to address
+    def jump(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Push current address onto stack and call subroutine
+    def call(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Skip next opcode if vX register is equal to k
+    def skip_if_vx_eq_const(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Skip next opcode if vX is not equal to k
+    def skip_if_vx_neq_const(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Skip next opcode if register vX == vY
+    def skip_if_vx_eq_vy(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Set register vX to k
+    def set_vx_to_const(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Add k to register vX
+    def add_const_to_vx(chip8 : Chip8, instruction : UInt16) : Nil
     end
   end
 end
