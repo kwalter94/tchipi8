@@ -6,7 +6,7 @@ module Tchipi8
 
   class InvalidInstruction < Tchipi8Error
     def initialize(instruction : UInt16)
-      super(instruction.to_s(BASE_16))
+      super("Could not decode instruction: 0x#{instruction.to_s(BASE_16)}")
     end
   end
 
