@@ -1,2 +1,4 @@
 require "spec"
-require "../src/tchipi8"
+require "../src/chip8"
+require "../src/decoder"
+require "../src/opcodes"
