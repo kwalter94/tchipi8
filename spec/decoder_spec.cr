@@ -5,22 +5,22 @@ module Tchipi8
     describe :decode do
       context "0x0FFF range instructions" do
         it "decodes CLS (0x00E0)" do
-          Decoder.decode(0x00E0).opcode.should eq(Opcodes::CLS.opcode)
+          Decoder.decode(0x00E0).should eq(Opcodes::CLS)
         end
 
         it "decodes RET (0x00EE)" do
-          Decoder.decode(0x00EE).opcode.should eq(Opcodes::RET.opcode)
+          Decoder.decode(0x00EE).should eq(Opcodes::RET)
         end
 
         it "decodes JMPNAS (0x0???)" do
-          Decoder.decode(0x0100).opcode.should eq(Opcodes::JMPNAS.opcode)
-          Decoder.decode(0x00E1).opcode.should eq(Opcodes::JMPNAS.opcode)
+          Decoder.decode(0x0100).should eq(Opcodes::JMPNAS)
+          Decoder.decode(0x00E1).should eq(Opcodes::JMPNAS)
 
           instruction = Random.new.rand(0x0FFF).to_u16
-          if {Opcodes::CLS.opcode, Opcodes::RET.opcode}.includes?(instruction)
-            Decoder.decode(instruction).opcode.should_not eq(Opcodes::JMPNAS.opcode)
+          if {Opcodes::CLS, Opcodes::RET}.includes?(instruction)
+            Decoder.decode(instruction).should_not eq(Opcodes::JMPNAS)
           else
-            Decoder.decode(instruction).opcode.should eq(Opcodes::JMPNAS.opcode)
+            Decoder.decode(instruction).should eq(Opcodes::JMPNAS)
           end
         end
       end
@@ -28,28 +28,28 @@ module Tchipi8
       context "0x1FFF range instructions" do
         it "decodes JMP (0x1???)" do
           instruction = Random.new.rand(0x1000..0x1FFF).to_u16
-          Decoder.decode(instruction).opcode.should eq(Opcodes::JMP.opcode)
+          Decoder.decode(instruction).should eq(Opcodes::JMP)
         end
       end
 
       context "0x2FFF range instructions" do
         it "decodes CALL (0x2???)" do
           instruction = Random.new.rand(0x2000..0x2FFF).to_u16
-          Decoder.decode(instruction).opcode.should eq(Opcodes::CALL.opcode)
+          Decoder.decode(instruction).should eq(Opcodes::CALL)
         end
       end
 
       context "0x3FFF range instructions" do
         it "decodes SKIPIFEQ (0x3???)" do
           instruction = Random.new.rand(0x3000..0x3FFF).to_u16
-          Decoder.decode(instruction).opcode.should eq(Opcodes::SKIPIFEQ.opcode)
+          Decoder.decode(instruction).should eq(Opcodes::SKIPIFEQ)
         end
       end
 
       context "0x4FFF range instructions" do
         it "decodes SKIPIFEQ (0x4???)" do
           instruction = Random.new.rand(0x4000..0x4FFF).to_u16
-          Decoder.decode(instruction).opcode.should eq(Opcodes::SKIPIFNEQ.opcode)
+          Decoder.decode(instruction).should eq(Opcodes::SKIPIFNEQ)
         end
       end
 
@@ -57,7 +57,7 @@ module Tchipi8
         it "decodes SKIPIFEQV (0x5??0)" do
           registers = Random.new.rand(0x00..0xFF)
           instruction = (0x5000 | registers << 4).to_u16
-          Decoder.decode(instruction).opcode.should eq(Opcodes::SKIPIFEQV.opcode)
+          Decoder.decode(instruction).should eq(Opcodes::SKIPIFEQV)
         end
 
         it "raises InvalidInstruction for instruction 0x5??X where X in 1..F" do
@@ -72,14 +72,14 @@ module Tchipi8
       context "0x6FFF range instructions" do
         it "decodes SET (0x6???)" do
           instruction = Random.new.rand(0x6000..0x6FFF).to_u16
-          Decoder.decode(instruction).opcode.should eq(Opcodes::SET.opcode)
+          Decoder.decode(instruction).should eq(Opcodes::SET)
         end
       end
 
       context "0x7FFF range instructions" do
         it "decodes ADD (0x7???)" do
           instruction = Random.new.rand(0x7000..0x7FFF).to_u16
-          Decoder.decode(instruction).opcode.should eq(Opcodes::ADD.opcode)
+          Decoder.decode(instruction).should eq(Opcodes::ADD)
         end
       end
     end
