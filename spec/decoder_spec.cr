@@ -82,6 +82,58 @@ module Tchipi8
           Decoder.decode(instruction).should eq(Opcodes::ADD)
         end
       end
+
+      context "0x8FFF range instructions" do
+        it "decodes COPY (0x8FF0)" do
+          Decoder.decode(0x8FF0).should eq(Opcodes::COPY)
+        end
+
+        it "decodes OR (0x8FF1)" do
+          Decoder.decode(0x8FF1).should eq(Opcodes::OR)
+        end
+
+        it "decodes AND (0x8FF2)" do
+          Decoder.decode(0x8FF2).should eq(Opcodes::AND)
+        end
+
+        it "decodes XOR (0x8FF3)" do
+          Decoder.decode(0x8FF3).should eq(Opcodes::XOR)
+        end
+
+        it "decodes ADDV (0x8FF4)" do
+          Decoder.decode(0x8FF4).should eq(Opcodes::ADDV)
+        end
+
+        it "decodes SUBV (0x8FF5)" do
+          Decoder.decode(0x8FF5).should eq(Opcodes::SUBV)
+        end
+
+        it "decodes RSHIFT (0x8FF6)" do
+          Decoder.decode(0x8FF6).should eq(Opcodes::RSHIFT)
+        end
+
+        it "decodes RSUB (0x8FF7)" do
+          Decoder.decode(0x8FF7).should eq(Opcodes::RSUB)
+        end
+
+        it "decodes LSHIFT (0x8FFE)" do
+          Decoder.decode(0x8FFE).should eq(Opcodes::LSHIFT)
+        end
+
+        it "raises InvalidInstruction on invalid instructions" do
+          registers = Random.new.rand(0x00..0xFF)
+
+          (0x8...0xE).each do |x|
+            instruction = (0x8000 | registers << 4 | x).to_u16
+            expect_raises(InvalidInstruction) { pp({instruction.to_s(16), Decoder.decode(instruction) }) }
+          end
+
+          expect_raises(InvalidInstruction) do
+            instruction = (0x8000 | registers << 4 | 0xF).to_u16
+            pp Decoder.decode(instruction)
+          end
+        end
+      end
     end
   end
 end

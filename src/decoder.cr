@@ -31,6 +31,19 @@ module Tchipi8
         Opcodes::SKIPIFEQV
       when 0x6000 then Opcodes::SET
       when 0x7000 then Opcodes::ADD
+      when 0x8000
+        case instruction | 0x8FF0
+        when Opcodes::COPY.opcode then Opcodes::COPY
+        when Opcodes::OR.opcode then Opcodes::OR
+        when Opcodes::AND.opcode then Opcodes::AND
+        when Opcodes::XOR.opcode then Opcodes::XOR
+        when Opcodes::ADDV.opcode then Opcodes::ADDV
+        when Opcodes::SUBV.opcode then Opcodes::SUBV
+        when Opcodes::RSHIFT.opcode then Opcodes::RSHIFT
+        when Opcodes::RSUB.opcode then Opcodes::RSUB
+        when Opcodes::LSHIFT.opcode then Opcodes::LSHIFT
+        else raise InvalidInstruction.new(instruction)
+        end
       else
         raise InvalidInstruction.new(instruction)
       end

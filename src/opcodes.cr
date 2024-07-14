@@ -12,15 +12,6 @@ module Tchipi8
     # nibbles of the opcode).
     #   0001
     # Clear screen
-    COPY = 0x8FF0.to_u16       # Copy value from register vY into vX
-    OR = 0x8FF1.to_u16         # Set vX to result of vX | vY
-    AND = 0x8FF2.to_u16        # Set vX to result of vX & vY
-    XOR = 0x8FF3.to_u16        # Set vX ro result of vX ^ vY
-    ADDV = 0x8FF4.to_u16        # Set vX to result of vX + vY, setting vF to 0 or 1 if overflow or not even if X == F
-    SUB = 0x8FF5.to_u16        # Set vX to result of vX - vY, setting vF to 0 or 1 if underflow or not even if X == F
-    RSHIFT = 0x8FF6.to_u16     # Set vX to result of vY >> 1, setting vF to shifted out bit even if X == F
-    RSUB = 0x8FF7.to_u16       # Set vX to result of vY - vX, setting vF to 0 or 1 if underflow or not even if X == F
-    LSHIFT = 0x8FFE.to_u16     # Set vX to result of vY << 1, setting vF to shifted out bit even if X == F
     SKIPIFNEQV = 0x9FF0.to_u16 # Skip next opcode if vX != vY
     SETI = 0xAFFF.to_u16       # Set register I to k
     JMPREL = 0xBFFF.to_u16     # Jump to v0 + k
@@ -66,15 +57,15 @@ module Tchipi8
     SKIPIFEQV = define_opcode(0x5FF0.to_u16, "skipifeqv", 73, skip_if_vx_eq_vy)
     SET = define_opcode(0x6FFF.to_u16, "set", 27, set_vx_to_const)
     ADD = define_opcode(0x7FFF.to_u16, "add", 45, add_const_to_vx)
-    # COPY = define_opcode(0x8FF0.to_u16, "copy", 200, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # OR = define_opcode(0x8FF1.to_u16, "or", 200, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # AND = define_opcode(0x8FF2.to_u16, "and", 200, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # XOR = define_opcode(0x8FF3.to_u16, "xor", 200, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # ADDV = define_opcode(0x8FF4.to_u16, "addv", 200, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # SUB = define_opcode(0x8FF5.to_u16, "sub", 200, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # RSHIFT = define_opcode(0x8FF6.to_u16, "rshift", 200, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # RSUB = define_opcode(0x8FF7.to_u16, "rsub", 200, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # LSHIFT = define_opcode(0x8FFE.to_u16, "lshift", 200, ->(_chip8 : Chip8, _instruction : UInt16) {})
+    COPY = define_opcode(0x8FF0.to_u16, "copy", 200, copy_vy_to_vx)
+    OR = define_opcode(0x8FF1.to_u16, "or", 200, or_vx_vy)
+    AND = define_opcode(0x8FF2.to_u16, "and", 200, and_vx_vy)
+    XOR = define_opcode(0x8FF3.to_u16, "xor", 200, xor_vx_vy)
+    ADDV = define_opcode(0x8FF4.to_u16, "addv", 200, add_vy_to_vx)
+    SUBV = define_opcode(0x8FF5.to_u16, "sub", 200, sub_vy_from_vx)
+    RSHIFT = define_opcode(0x8FF6.to_u16, "rshift", 200, right_shift_vy_to_vx)
+    RSUB = define_opcode(0x8FF7.to_u16, "rsub", 200, sub_vx_from_vy)
+    LSHIFT = define_opcode(0x8FFE.to_u16, "lshift", 200, left_shift_vy_to_vx)
     # SKIPIFNEQV = define_opcode(0x9FF0.to_u16, "skipifneqv", 73, ->(_chip8 : Chip8, _instruction : UInt16) {})
     # SETI = define_opcode(0xAFFF.to_u16, "seti", 55, ->(_chip8 : Chip8, _instruction : UInt16) {})
     # JMPREL = define_opcode(0xBFFF.to_u16, "jmprel", 105, ->(_chip8 : Chip8, _instruction : UInt16) {})
@@ -143,6 +134,43 @@ module Tchipi8
 
     # Add k to register vX
     def add_const_to_vx(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+
+    # Copy value from register vY into vX
+    def copy_vy_to_vx(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Set vX to result of vX | vY
+    def or_vx_vy(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Set vX to result of vX & vY
+    def and_vx_vy(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Set vX to result of vX ^ vY
+    def xor_vx_vy(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Set vX to result of vX + vY, setting vF to 0 or 1 if overflow or not even if X == F
+    def add_vy_to_vx(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Set vX to result of vX - vY, setting vF to 0 or 1 if underflow or not even if X == F
+    def sub_vy_from_vx(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Set vX to result of vY >> 1, setting vF to shifted out bit even if X == F
+    def right_shift_vy_to_vx(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Set vX to result of vY - vX, setting vF to 0 or 1 if underflow or not even if X == F
+    def sub_vx_from_vy(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Set vX to result of vY << 1, setting vF to shifted out bit even if X == F
+    def left_shift_vy_to_vx(chip8 : Chip8, instruction : UInt16) : Nil
     end
   end
 end
