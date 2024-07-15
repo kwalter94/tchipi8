@@ -12,7 +12,6 @@ module Tchipi8
     # nibbles of the opcode).
     #   0001
     # Clear screen
-    SKIPIFNEQV = 0x9FF0.to_u16 # Skip next opcode if vX != vY
     SETI = 0xAFFF.to_u16       # Set register I to k
     JMPREL = 0xBFFF.to_u16     # Jump to v0 + k
     RAND = 0xCFFF.to_u16       # Set vX to random value 0x8FF2.to_u16-ed with k
@@ -66,7 +65,7 @@ module Tchipi8
     RSHIFT = define_opcode(0x8FF6.to_u16, "rshift", 200, right_shift_vy_to_vx)
     RSUB = define_opcode(0x8FF7.to_u16, "rsub", 200, sub_vx_from_vy)
     LSHIFT = define_opcode(0x8FFE.to_u16, "lshift", 200, left_shift_vy_to_vx)
-    # SKIPIFNEQV = define_opcode(0x9FF0.to_u16, "skipifneqv", 73, ->(_chip8 : Chip8, _instruction : UInt16) {})
+    SKIPIFNEQV = define_opcode(0x9FF0.to_u16, "skipifneqv", 73, skip_if_vx_neq_vy)
     # SETI = define_opcode(0xAFFF.to_u16, "seti", 55, ->(_chip8 : Chip8, _instruction : UInt16) {})
     # JMPREL = define_opcode(0xBFFF.to_u16, "jmprel", 105, ->(_chip8 : Chip8, _instruction : UInt16) {})
     # RAND = define_opcode(0xCFFF.to_u16, "rand", 164, ->(_chip8 : Chip8, _instruction : UInt16) {})
@@ -171,6 +170,11 @@ module Tchipi8
 
     # Set vX to result of vY << 1, setting vF to shifted out bit even if X == F
     def left_shift_vy_to_vx(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+
+    # Skip next opcode if vX != vY
+    def skip_if_vx_neq_vy(chip8 : Chip8, instruction : UInt16) : Nil
     end
   end
 end

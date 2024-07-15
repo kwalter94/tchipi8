@@ -153,23 +153,37 @@ module Tchipi8
         end
 
         it "raises InvalidInstruction on invalid instructions" do
-          registers = Random.new.rand(0x00..0xFF)
-
-          (0x8...0xE).each do |x|
-            instruction = (0x8000 | registers << 4 | x).to_u16
-            expect_raises(InvalidInstruction) { Decoder.decode(instruction) }
+          (0x8...0xE).each do |x| # Skip 0x8??E which is a valid instruction
+            (0x00..0xFF).each do |registers|
+              instruction = (0x8000 | registers << 4 | x).to_u16
+              expect_raises(InvalidInstruction) { Decoder.decode(instruction) }
+            end
           end
 
-          expect_raises(InvalidInstruction) do
-            instruction = (0x8000 | registers << 4 | 0xF).to_u16
-            Decoder.decode(instruction)
+          (0x00..0xFF).each do |registers|
+            expect_raises(InvalidInstruction) do
+              instruction = (0x8000 | registers << 4 | 0xF).to_u16
+              Decoder.decode(instruction)
+            end
           end
         end
       end
 
       context "0x9FFF range instructions" do
         it "decodes SKIPIFNEQV (0x9??0)" do
-          true.should be_false
+          (0x00..0xFF).each do |registers|
+            instruction = (0x9000 | (registers << 4)).to_u16
+            Decoder.decode(instruction).should eq(Opcodes::SKIPIFNEQV)
+          end
+        end
+
+        it "raises InvalidInstruction for instruction in 0x9??X where X in 1..F" do
+          (0x00..0xFF).each do |registers|
+            (0x1..0xF).each do |x|
+              instruction = (0x9000 | (registers << 4) | x).to_u16
+              expect_raises(InvalidInstruction) { Decoder.decode(instruction) }
+            end
+          end
         end
       end
     end

@@ -42,6 +42,10 @@ module Tchipi8
         when Opcodes::LSHIFT.opcode then Opcodes::LSHIFT
         else raise InvalidInstruction.new(instruction)
         end
+      when 0x9000
+        raise InvalidInstruction.new(instruction) unless (instruction & 0x000F).zero?
+
+        Opcodes::SKIPIFNEQV
       else
         raise InvalidInstruction.new(instruction)
       end
