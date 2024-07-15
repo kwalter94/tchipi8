@@ -3,7 +3,7 @@ require "./spec_helper"
 module Tchipi8
   describe Decoder do
     describe :decode do
-      context "0x0FFF range instructions" do
+      context "0x0??? range instructions" do
         it "decodes CLS (0x00E0)" do
           Decoder.decode(0x00E0).should eq(Opcodes::CLS)
         end
@@ -21,7 +21,7 @@ module Tchipi8
         end
       end
 
-      context "0x1FFF range instructions" do
+      context "0x1??? range instructions" do
         it "decodes JMP (0x1???)" do
           (0x1000..0x1FFF).each do |instruction|
             Decoder.decode(instruction.to_u16).should eq(Opcodes::JMP)
@@ -29,7 +29,7 @@ module Tchipi8
         end
       end
 
-      context "0x2FFF range instructions" do
+      context "0x2??? range instructions" do
         it "decodes CALL (0x2???)" do
           (0x2000..0x2FFF).each do |instruction|
             Decoder.decode(instruction.to_u16).should eq(Opcodes::CALL)
@@ -37,7 +37,7 @@ module Tchipi8
         end
       end
 
-      context "0x3FFF range instructions" do
+      context "0x3??? range instructions" do
         it "decodes SKIPIFEQ (0x3???)" do
           (0x3000..0x3FFF).each do |instruction|
             Decoder.decode(instruction.to_u16).should eq(Opcodes::SKIPIFEQ)
@@ -45,7 +45,7 @@ module Tchipi8
         end
       end
 
-      context "0x4FFF range instructions" do
+      context "0x4??? range instructions" do
         it "decodes SKIPIFEQ (0x4???)" do
           (0x4000..0x4FFF).each do |instruction|
             Decoder.decode(instruction.to_u16).should eq(Opcodes::SKIPIFNEQ)
@@ -53,7 +53,7 @@ module Tchipi8
         end
       end
 
-      context "0x5FF0 range instructions" do
+      context "0x5??? range instructions" do
         it "decodes SKIPIFEQV (0x5??0)" do
           (0x00..0xFF).each do |registers|
             instruction = (0x5000 | registers << 4).to_u16
@@ -72,7 +72,7 @@ module Tchipi8
         end
       end
 
-      context "0x6FFF range instructions" do
+      context "0x6??? range instructions" do
         it "decodes SET (0x6???)" do
           (0x6000..0x6FFF).each do |instruction|
             Decoder.decode(instruction.to_u16).should eq(Opcodes::SET)
@@ -80,7 +80,7 @@ module Tchipi8
         end
       end
 
-      context "0x7FFF range instructions" do
+      context "0x7??? range instructions" do
         it "decodes ADD (0x7???)" do
           (0x7000...0x7FFF).each do |instruction|
             Decoder.decode(instruction.to_u16).should eq(Opcodes::ADD)
@@ -88,7 +88,7 @@ module Tchipi8
         end
       end
 
-      context "0x8FFF range instructions" do
+      context "0x8??? range instructions" do
         it "decodes COPY (0x8??0)" do
           (0x00..0xFF).each do |registers|
             instruction = (0x8000 | (registers << 4)).to_u16
@@ -169,7 +169,7 @@ module Tchipi8
         end
       end
 
-      context "0x9FFF range instructions" do
+      context "0x9??? range instructions" do
         it "decodes SKIPIFNEQV (0x9??0)" do
           (0x00..0xFF).each do |registers|
             instruction = (0x9000 | (registers << 4)).to_u16
@@ -183,6 +183,63 @@ module Tchipi8
               instruction = (0x9000 | (registers << 4) | x).to_u16
               expect_raises(InvalidInstruction) { Decoder.decode(instruction) }
             end
+          end
+        end
+      end
+
+      context "0xA??? range instructions" do
+        it "decodes SETI (0xA???)" do
+          (0xA000..0xAFFF).each do |instruction|
+            Decoder.decode(instruction.to_u16).should eq(Opcodes::SETI)
+          end
+        end
+      end
+
+      context "0xB??? range instructions" do
+        it "decodes JMPREL (0xB???)" do
+          (0xB000..0xBFFF).each do |instruction|
+            Decoder.decode(instruction.to_u16).should eq(Opcodes::JMPREL)
+          end
+        end
+      end
+
+      context "0xC??? range instructions" do
+        it "decodes RAND (0xC???)" do
+          (0xC000..0xCFFF).each do |instruction|
+            Decoder.decode(instruction.to_u16).should eq(Opcodes::RAND)
+          end
+        end
+      end
+
+      context "0xD??? range instructions" do
+        it "decodes DRAW (0xD???)" do
+          (0xD000..0xDFFF).each do |instruction|
+            Decoder.decode(instruction.to_u16).should eq(Opcodes::DRAW)
+          end
+        end
+      end
+
+      context "0xE??? range instructions" do
+        it "decodes SKIPIFKEY (0xE?9E)" do
+          (0x0..0xF).each do |register|
+            instruction = (0xE09E | (register << 8)).to_u16
+            Decoder.decode(instruction).should eq(Opcodes::SKIPIFKEY)
+          end
+        end
+
+        it "decodes SKIPIFNKEY (0xE?A1)" do
+          (0x0..0xF).each do |register|
+            instruction = (0xE0A1 | (register << 8)).to_u16
+            Decoder.decode(instruction).should eq(Opcodes::SKIPIFNKEY)
+          end
+        end
+
+        it "raises InvalidInstruction for non-existent 0xE??? opcodes" do
+          (0xE000..0xEFFF).each do |instruction|
+            masked = instruction | 0x0F00
+            next if masked == Opcodes::SKIPIFKEY.opcode || masked == Opcodes::SKIPIFNKEY.opcode
+
+            expect_raises(InvalidInstruction) { Decoder.decode(instruction.to_u16) }
           end
         end
       end

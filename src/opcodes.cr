@@ -12,12 +12,6 @@ module Tchipi8
     # nibbles of the opcode).
     #   0001
     # Clear screen
-    SETI = 0xAFFF.to_u16       # Set register I to k
-    JMPREL = 0xBFFF.to_u16     # Jump to v0 + k
-    RAND = 0xCFFF.to_u16       # Set vX to random value 0x8FF2.to_u16-ed with k
-    DRAW = 0xDFFF.to_u16       # Draw sprite at position [vX, vY] using sprite data from location in register I
-    SKIPIFKEY = 0xEF9E.to_u16  # Skip next opcode if key pressed matches lower 4 bits vX
-    SKIPIFNKEY = 0xEFA1.to_u16 # Skip next opcode if lower 4 bits of vX don't match key pressed
     COPYDV = 0xFF07.to_u16     # Copy delay timer value to vX
     READKEY = 0xFF0A.to_u16    # Read next key pressed, write it to vX (clear screen in Megachip mode)
     COPYVD = 0xFF15.to_u16     # Set delay timer from vX
@@ -66,12 +60,12 @@ module Tchipi8
     RSUB = define_opcode(0x8FF7.to_u16, "rsub", 200, sub_vx_from_vy)
     LSHIFT = define_opcode(0x8FFE.to_u16, "lshift", 200, left_shift_vy_to_vx)
     SKIPIFNEQV = define_opcode(0x9FF0.to_u16, "skipifneqv", 73, skip_if_vx_neq_vy)
-    # SETI = define_opcode(0xAFFF.to_u16, "seti", 55, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # JMPREL = define_opcode(0xBFFF.to_u16, "jmprel", 105, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # RAND = define_opcode(0xCFFF.to_u16, "rand", 164, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # DRAW = define_opcode(0xDFFF.to_u16, "draw", 22734, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # SKIPIFKEY = define_opcode(0xEF9E.to_u16, "skipifkey", 73, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # SKIPIFNKEY = define_opcode(0xEFA1.to_u16, "skipifnkey", 73, ->(_chip8 : Chip8, _instruction : UInt16) {})
+    SETI = define_opcode(0xAFFF.to_u16, "seti", 55, set_i_to_const)
+    JMPREL = define_opcode(0xBFFF.to_u16, "jmprel", 105, jump_rel)
+    RAND = define_opcode(0xCFFF.to_u16, "rand", 164, set_vx_to_rand)
+    DRAW = define_opcode(0xDFFF.to_u16, "draw", 22734, draw)
+    SKIPIFKEY = define_opcode(0xEF9E.to_u16, "skipifkey", 73, skip_if_key_pressed)
+    SKIPIFNKEY = define_opcode(0xEFA1.to_u16, "skipifnkey", 73, skip_if_other_key_pressed)
     # COPYDV = define_opcode(0xFF07.to_u16, "copydv", 45, ->(_chip8 : Chip8, _instruction : UInt16) {})
     # READKEY = define_opcode(0xFF0A.to_u16, "readkey", 0, ->(_chip8 : Chip8, _instruction : UInt16) {})
     # COPYVD = define_opcode(0xFF15.to_u16, "copyvd", 45, ->(_chip8 : Chip8, _instruction : UInt16) {})
@@ -172,9 +166,32 @@ module Tchipi8
     def left_shift_vy_to_vx(chip8 : Chip8, instruction : UInt16) : Nil
     end
 
-
     # Skip next opcode if vX != vY
     def skip_if_vx_neq_vy(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Set register I to k
+    def set_i_to_const(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Jump to v0 + k
+    def jump_rel(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Set vX to random value AND-ed with k (byte)
+    def set_vx_to_rand(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Draw sprite at position [vX, vY] using sprite data from location in register I
+    def draw(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Skip next opcode if key pressed matches lower 4 bits vX
+    def skip_if_key_pressed(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Skip next opcode if lower 4 bits of vX don't match key pressed
+    def skip_if_other_key_pressed(chip8 : Chip8, instruction : UInt16) : Nil
     end
   end
 end

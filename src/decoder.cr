@@ -46,6 +46,16 @@ module Tchipi8
         raise InvalidInstruction.new(instruction) unless (instruction & 0x000F).zero?
 
         Opcodes::SKIPIFNEQV
+      when 0xA000 then Opcodes::SETI
+      when 0xB000 then Opcodes::JMPREL
+      when 0xC000 then Opcodes::RAND
+      when 0xD000 then Opcodes::DRAW
+      when 0xE000
+        case instruction | 0x0F00
+        when Opcodes::SKIPIFKEY.opcode then Opcodes::SKIPIFKEY
+        when Opcodes::SKIPIFNKEY.opcode then Opcodes::SKIPIFNKEY
+        else raise InvalidInstruction.new(instruction)
+        end
       else
         raise InvalidInstruction.new(instruction)
       end
