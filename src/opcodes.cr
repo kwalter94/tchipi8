@@ -12,15 +12,6 @@ module Tchipi8
     # nibbles of the opcode).
     #   0001
     # Clear screen
-    COPYDV = 0xFF07.to_u16     # Copy delay timer value to vX
-    READKEY = 0xFF0A.to_u16    # Read next key pressed, write it to vX (clear screen in Megachip mode)
-    COPYVD = 0xFF15.to_u16     # Set delay timer from vX
-    COPYVS = 0xFF18.to_u16     # Set sound timer from vX (beep as long as sound timer > 0)
-    ADDI = 0xFF1E.to_u16       # Add vX to I
-    COPYVI = 0xFF29.to_u16     # Copy vX's low nibble to I
-    MOVMBCD = 0xFF33.to_u16    # Copy vX as BCD to I[0,2]
-    MOVM = 0xFF55.to_u16       # Copy v[0,X] to I[0,X]
-    MOV = 0xFF65.to_u16        # Copy I[0,X] to v[0,X]
 
 
     record Opcode,
@@ -66,15 +57,15 @@ module Tchipi8
     DRAW = define_opcode(0xDFFF.to_u16, "draw", 22734, draw)
     SKIPIFKEY = define_opcode(0xEF9E.to_u16, "skipifkey", 73, skip_if_key_pressed)
     SKIPIFNKEY = define_opcode(0xEFA1.to_u16, "skipifnkey", 73, skip_if_other_key_pressed)
-    # COPYDV = define_opcode(0xFF07.to_u16, "copydv", 45, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # READKEY = define_opcode(0xFF0A.to_u16, "readkey", 0, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # COPYVD = define_opcode(0xFF15.to_u16, "copyvd", 45, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # COPYVS = define_opcode(0xFF18.to_u16, "copyvs", 45, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # ADDI = define_opcode(0xFF1E.to_u16, "addi", 86, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # COPYVI = define_opcode(0xFF29.to_u16, "copyvi", 91, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # MOVMBCD = define_opcode(0xFF33.to_u16, "movmbcd", 927, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # MOVM = define_opcode(0xFF55.to_u16, "movm", 605, ->(_chip8 : Chip8, _instruction : UInt16) {})
-    # MOV = define_opcode(0xFF65.to_u16, "mov", 605, ->(_chip8 : Chip8, _instruction : UInt16) {})
+    COPYDV = define_opcode(0xFF07.to_u16, "copydv", 45, copy_delay_timer_to_vx)
+    READKEY = define_opcode(0xFF0A.to_u16, "readkey", 0, read_key)
+    COPYVD = define_opcode(0xFF15.to_u16, "copyvd", 45, set_delay_timer_to_vx)
+    COPYVS = define_opcode(0xFF18.to_u16, "copyvs", 45, set_sound_timer_to_vx)
+    ADDI = define_opcode(0xFF1E.to_u16, "addi", 86, add_vx_to_i)
+    COPYVI = define_opcode(0xFF29.to_u16, "copyvi", 91, set_i_to_low_vx)
+    MOVMBCD = define_opcode(0xFF33.to_u16, "movmbcd", 927, move_vx_as_bcd_to_mem)
+    MOVM = define_opcode(0xFF55.to_u16, "movm", 605, move_v_array_to_mem)
+    MOV = define_opcode(0xFF65.to_u16, "mov", 605, move_mem_array_to_v)
 
     def extract_operand1(instruction : UInt16) : UInt16
       (instruction & 0x0F00) >> 8
@@ -192,6 +183,42 @@ module Tchipi8
 
     # Skip next opcode if lower 4 bits of vX don't match key pressed
     def skip_if_other_key_pressed(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Copy delay timer value to vX
+    def copy_delay_timer_to_vx(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Read next key pressed, write it to vX (clear screen in Megachip mode)
+    def read_key(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Set delay timer from vX
+    def set_delay_timer_to_vx(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Set sound timer from vX (beep as long as sound timer > 0)
+    def set_sound_timer_to_vx(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Add vX to I
+    def add_vx_to_i(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Copy vX's low nibble to I
+    def set_i_to_low_vx(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Copy vX as BCD to I[0,2]
+    def move_vx_as_bcd_to_mem(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Copy v[0,X] to I[0,X]
+    def move_v_array_to_mem(chip8 : Chip8, instruction : UInt16) : Nil
+    end
+
+    # Copy I[0,X] to v[0,X]
+    def move_mem_array_to_v(chip8 : Chip8, instruction : UInt16) : Nil
     end
   end
 end

@@ -56,6 +56,19 @@ module Tchipi8
         when Opcodes::SKIPIFNKEY.opcode then Opcodes::SKIPIFNKEY
         else raise InvalidInstruction.new(instruction)
         end
+      when 0xF000
+        case instruction | 0x0F00
+        when Opcodes::COPYDV.opcode then Opcodes::COPYDV
+        when Opcodes::READKEY.opcode then Opcodes::READKEY
+        when Opcodes::COPYVD.opcode then Opcodes::COPYVD
+        when Opcodes::COPYVS.opcode then Opcodes::COPYVS
+        when Opcodes::ADDI.opcode then Opcodes::ADDI
+        when Opcodes::COPYVI.opcode then Opcodes::COPYVI
+        when Opcodes::MOVMBCD.opcode then Opcodes::MOVMBCD
+        when Opcodes::MOVM.opcode then Opcodes::MOVM
+        when Opcodes::MOV.opcode then Opcodes::MOV
+        else raise InvalidInstruction.new(instruction)
+        end
       else
         raise InvalidInstruction.new(instruction)
       end

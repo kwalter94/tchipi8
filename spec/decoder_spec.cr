@@ -243,6 +243,91 @@ module Tchipi8
           end
         end
       end
+
+      context "0xF??? range instructions" do
+        it "decodes COPYDV (0xF?07)" do
+          (0x0..0xF).each do |register|
+            instruction = (0xF007 | (register << 8)).to_u16
+            Decoder.decode(instruction).should eq(Opcodes::COPYDV)
+          end
+        end
+
+        it "decodes READKEY (0xF?0A)" do
+          (0x0..0xF).each do |register|
+            instruction = (0xF00A | (register << 8)).to_u16
+            Decoder.decode(instruction).should eq(Opcodes::READKEY)
+          end
+        end
+
+        it "decodes COPYVD (0xF?15)" do
+          (0x0..0xF).each do |register|
+            instruction = (0xF015 | (register << 8)).to_u16
+            Decoder.decode(instruction).should eq(Opcodes::COPYVD)
+          end
+        end
+
+        it "decodes COPYVS (0xF?18)" do
+          (0x0..0xF).each do |register|
+            instruction = (0xF018 | (register << 8)).to_u16
+            Decoder.decode(instruction).should eq(Opcodes::COPYVS)
+          end
+        end
+
+        it "decodes ADDI (0xF?1E)" do
+          (0x0..0xF).each do |register|
+            instruction = (0xF01E | (register << 8)).to_u16
+            Decoder.decode(instruction).should eq(Opcodes::ADDI)
+          end
+        end
+
+        it "decodes COPYVI (0xF?29)" do
+          (0x0..0xF).each do |register|
+            instruction = (0xF029 | (register << 8)).to_u16
+            Decoder.decode(instruction).should eq(Opcodes::COPYVI)
+          end
+        end
+
+        it "decodes MOVMBCD (0xF?33)" do
+          (0x0..0xF).each do |register|
+            instruction = (0xF033 | (register << 8)).to_u16
+            Decoder.decode(instruction).should eq(Opcodes::MOVMBCD)
+          end
+        end
+
+        it "decodes MOVM (0xF?55)" do
+          (0x0..0xF).each do |register|
+            instruction = (0xF055 | (register << 8)).to_u16
+            Decoder.decode(instruction).should eq(Opcodes::MOVM)
+          end
+        end
+
+        it "decodes MOV (0xF?65)" do
+          (0x0..0xF).each do |register|
+            instruction = (0xF065 | (register << 8)).to_u16
+            Decoder.decode(instruction).should eq(Opcodes::MOV)
+          end
+        end
+
+        it "raises InvalidInstruction for invalid 0xF??? range opcodes" do
+          valid_opcodes = {
+            Opcodes::COPYDV,
+            Opcodes::READKEY,
+            Opcodes::COPYVD,
+            Opcodes::COPYVS,
+            Opcodes::ADDI,
+            Opcodes::COPYVI,
+            Opcodes::MOVMBCD,
+            Opcodes::MOVM,
+            Opcodes::MOV,
+          }.map(&.opcode)
+
+          (0xF000...0xFFFF).each do |instruction|
+            next if valid_opcodes.includes?(instruction | 0x0F00)
+
+            expect_raises(InvalidInstruction) { Decoder.decode(instruction.to_u16) }
+          end
+        end
+      end
     end
   end
 end
