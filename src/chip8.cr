@@ -1,4 +1,4 @@
-require "./display"
+require "./io"
 
 module Tchipi8
   ADDRESS_MASK = 0x0FFF # Addresses are 12 bytes long
@@ -8,7 +8,7 @@ module Tchipi8
 
 
   class Chip8
-    property display : Display
+    property io : IO::Controller
     property pc : UInt16
     property l : UInt16
     property v : Array(UInt8)
@@ -17,8 +17,7 @@ module Tchipi8
     property memory : Array(UInt8)
     property stack : Array(UInt16)
 
-    def initialize
-      @display = Display.new
+    def initialize(@io)
       @pc = 0
       @l = 0
       @v = Array(UInt8).new(VREG_COUNT, 0)
@@ -26,6 +25,13 @@ module Tchipi8
       @delay_timer = 0
       @memory = Array(UInt8).new(MAX_RAM, 0)
       @stack = Array(UInt16).new(MAX_STACK, 0)
+    end
+
+    def next_instruction : UInt16
+      instruction = (memory[@pc].to_u16 << 8) | memory[@pc + 1]
+      @pc += 2
+
+      instruction
     end
   end
 end
