@@ -38,6 +38,7 @@ module Tchipi8
 
     # Return from subroutine
     RET = define_opcode(0x00EE.to_u16, "ret", 105) do |chip8, instruction|
+      chip8.pc = chip8.stack.pop
     end
 
     # Jump to native assembler subroutine
@@ -51,6 +52,8 @@ module Tchipi8
 
     # Push current address onto stack and call subroutine
     CALL = define_opcode(0x2FFF.to_u16, "call", 105) do |chip8, instruction|
+      chip8.stack.push(chip8.pc)
+      chip8.pc = instruction & 0x0FFF
     end
 
     # Skip next opcode if vX register is equal to k

@@ -219,5 +219,52 @@ module Tchipi8
         end
       end
     end
+
+    describe "CALL" do
+      it "sets PC to specified address" do
+        chip8 = Chip8.new(DummyIOController.new)
+
+        (0x2000..0x2FFF).each do |instruction|
+          Opcodes::CALL.operation.call(chip8, instruction.to_u16)
+          chip8.pc.should eq(instruction & 0x0FFF)
+        end
+      end
+
+      it "pushes current address onto stack" do
+        rng = Random.new
+
+        (0x2000..0x2FFF).each do |instruction|
+          chip8 = Chip8.new(DummyIOController.new)
+          chip8.pc = current_address = rng.rand(0xFFF).to_u16
+
+          Opcodes::CALL.operation.call(chip8, instruction.to_u16)
+          chip8.stack.size.should be > 0
+          chip8.stack[-1].should eq(current_address)
+        end
+      end
+    end
+
+    describe "RET" do
+      it "sets PC to last value pushed onto stack" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+        chip8.pc = rng.rand(0xFFF).to_u16
+        ret_address = rng.rand(0xFFF).to_u16
+        chip8.stack.push(ret_address)
+
+        Opcodes::RET.operation.call(chip8, 0x0000.to_u16)
+        chip8.pc.should eq(ret_address)
+      end
+
+      it "pops last value off stack" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+        chip8.pc = rng.rand(0xFFF).to_u16
+        ret_address = chip8.stack.push(rng.rand(0xFFF).to_u16)
+
+        Opcodes::RET.operation.call(chip8, 0x0000.to_u16)
+        chip8.stack.size.should eq(0)
+      end
+    end
   end
 end

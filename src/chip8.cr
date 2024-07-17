@@ -24,7 +24,7 @@ module Tchipi8
       @sound_timer = 0
       @delay_timer = 0
       @memory = Array(UInt8).new(MAX_RAM, 0)
-      @stack = Array(UInt16).new(MAX_STACK, 0)
+      @stack = Array(UInt16).new
     end
 
     def next_instruction : UInt16
