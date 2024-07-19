@@ -58,14 +58,26 @@ module Tchipi8
 
     # Skip next opcode if vX register is equal to k
     SKIPIFEQ = define_opcode(0x3FFF.to_u16, "skipifeq", 55) do |chip8, instruction|
+      x = (instruction & 0x0F00) >> 8
+      k = instruction & 0x00FF
+
+      chip8.pc += 2 if chip8.v[x] == k
     end
 
     # Skip next opcode if vX is not equal to k
     SKIPIFNEQ = define_opcode(0x4FFF.to_u16, "skipifneq", 55) do |chip8, instruction|
+      x = (instruction & 0x0F00) >> 8
+      k = instruction & 0x00FF
+
+      chip8.pc += 2 if chip8.v[x] != k
     end
 
     # Skip next opcode if register vX == vY
     SKIPIFEQV = define_opcode(0x5FF0.to_u16, "skipifeqv", 73) do |chip8, instruction|
+      x = (instruction & 0x0F00) >> 8
+      y = (instruction & 0x00F0) >> 4
+
+      chip8.pc += 2 if chip8.v[x] == chip8.v[y]
     end
 
     # Set register vX to k

@@ -244,6 +244,103 @@ module Tchipi8
       end
     end
 
+    describe "SKIPIFEQ" do
+      it "increments PC by two if vX = k" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+
+        (0x0..0xF).each do |x|
+          chip8.pc = address = rng.rand(0xFFF).to_u16
+          chip8.v[x] = rng.rand(0xFF).to_u8
+          instruction = (0x3000 | x << 8 | chip8.v[x]).to_u16
+
+          Opcodes::SKIPIFEQ.operation.call(chip8, instruction)
+          chip8.pc.should eq(address + 2)
+        end
+      end
+
+      it "does not modify PC if vX != k" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+
+        (0x0..0xF).each do |x|
+          chip8.pc = address = rng.rand(0xFFF).to_u16
+          chip8.v[x] = rng.rand(0xFE).to_u8
+          instruction = (0x3000 | x << 8 | chip8.v[x] + 1).to_u16
+
+          Opcodes::SKIPIFEQ.operation.call(chip8, instruction)
+          chip8.pc.should eq(address)
+        end
+      end
+    end
+
+    describe "SKIPIFNEQ" do
+      it "increments PC by two if vX != k" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+
+        (0x0..0xF).each do |x|
+          chip8.pc = address = rng.rand(0xFFF).to_u16
+          chip8.v[x] = rng.rand(0xFE).to_u8
+          instruction = (0x4000 | x << 8 | chip8.v[x] + 1).to_u16
+
+          Opcodes::SKIPIFNEQ.operation.call(chip8, instruction)
+          chip8.pc.should eq(address + 2)
+        end
+      end
+
+      it "does not modify PC if vX == k" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+
+        (0x0..0xF).each do |x|
+          chip8.pc = address = rng.rand(0xFFF).to_u16
+          chip8.v[x] = rng.rand(0xFF).to_u8
+          instruction = (0x4000 | x << 8 | chip8.v[x]).to_u16
+
+          Opcodes::SKIPIFNEQ.operation.call(chip8, instruction)
+          chip8.pc.should eq(address)
+        end
+      end
+    end
+
+    describe "SKIPIFEQV" do
+      it "increments PC by two if vX == vY" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+
+        (0x0..0xF).each do |x|
+          (0x0..0xF).each do |y|
+            chip8.pc = address = rng.rand(0xFFF).to_u16
+            chip8.v[x] = chip8.v[y] = rng.rand(0xFF).to_u8
+            instruction = (0x5000 | x << 8 | x << 4).to_u16
+
+            Opcodes::SKIPIFEQV.operation.call(chip8, instruction)
+            chip8.pc.should eq(address + 2)
+          end
+        end
+      end
+
+      it "does not modify PC if vX != vY" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+
+        (0x0..0xF).each do |x|
+          (0x0..0xF).each do |y|
+            next if x == y
+
+            chip8.pc = address = rng.rand(0xFFF).to_u16
+            chip8.v[x] = rng.rand(0xFE).to_u8
+            chip8.v[y] = chip8.v[x] + 1
+            instruction = (0x5000 | x << 8 | y << 4).to_u16
+
+            Opcodes::SKIPIFEQV.operation.call(chip8, instruction)
+            chip8.pc.should eq(address)
+          end
+        end
+      end
+    end
+
     describe "RET" do
       it "sets PC to last value pushed onto stack" do
         chip8 = Chip8.new(DummyIOController.new)
