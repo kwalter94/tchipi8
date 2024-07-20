@@ -143,14 +143,32 @@ module Tchipi8
 
     # Set vX to result of vY >> 1, setting vF to shifted out bit even if X == F
     RSHIFT = define_opcode(0x8FF6.to_u16, "rshift", 200) do |chip8, instruction|
+      x = (instruction & 0x0F00) >> 8
+      y = (instruction & 0x00F0) >> 4
+
+      shifted_out = chip8.v[y] & 0x01
+      chip8.v[x] = chip8.v[y] >> 1
+      chip8.v[0xF] = shifted_out
     end
 
     # Set vX to result of vY - vX, setting vF to 0 or 1 if underflow or not even if X == F
-    RSUB = define_opcode(0x8FF7.to_u16, "rsub", 200) do |chip8, instruction|
+    RSUBV = define_opcode(0x8FF7.to_u16, "rsub", 200) do |chip8, instruction|
+      x = (instruction & 0x0F00) >> 8
+      y = (instruction & 0x00F0) >> 4
+
+      is_underflowing = chip8.v[y] < chip8.v[x]
+      chip8.v[x] = chip8.v[y] &- chip8.v[x]
+      chip8.v[0xF] = (is_underflowing ? 1 : 0).to_u8
     end
 
     # Set vX to result of vY << 1, setting vF to shifted out bit even if X == F
     LSHIFT = define_opcode(0x8FFE.to_u16, "lshift", 200) do |chip8, instruction|
+      x = (instruction & 0x0F00) >> 8
+      y = (instruction & 0x00F0) >> 4
+
+      shifted_out = chip8.v[y] & 0x80
+      chip8.v[x] = chip8.v[y] << 1
+      chip8.v[0xF] = shifted_out
     end
 
     # Skip next opcode if vX != vY

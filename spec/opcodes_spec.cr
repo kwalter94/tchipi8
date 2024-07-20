@@ -294,6 +294,81 @@ module Tchipi8
       end
     end
 
+    describe "RSUBV" do
+      it "subtracts vX from vY and stores the result in vX" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+
+        (0x0..0xE).each do |register_x| # vF is always used for overflow indicator
+          (0x0..0xF).each do |register_y|
+            value_x = chip8.v[register_x] = rng.rand(128).to_u8
+            value_y = chip8.v[register_y] = register_x == register_y ? value_x : (128 + rng.rand(128)).to_u8
+
+            instruction = (0x8007 | register_x << 8 | register_y << 4).to_u16
+            Opcodes::RSUBV.operation.call(chip8, instruction)
+
+            chip8.v[register_x].should eq(value_y - value_x)
+          end
+        end
+      end
+
+      it "sets vF to 0 when there is no underflow" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+
+        (0x0..0xF).each do |register_x|
+          (0x0..0xF).each do |register_y|
+            value_x = chip8.v[register_x] = rng.rand(128).to_u8
+            value_y = chip8.v[register_y] = register_x == register_y ? value_x : (128 + rng.rand(128)).to_u8
+
+            instruction = (0x8007 | register_x << 8 | register_y << 4).to_u16
+            Opcodes::RSUBV.operation.call(chip8, instruction)
+
+            chip8.v[0xF].should eq(0)
+          end
+        end
+      end
+
+      it "wraps around on underflow" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+
+        (0x0..0xE).each do |register_x| # vF is always used for overflow indicator
+          (0x0..0xF).each do |register_y|
+            next if register_x == register_y # Can't underflow
+
+            value_y = chip8.v[register_y] = rng.rand(0xFE).to_u8
+            value_x = chip8.v[register_x] = value_y + 1 + rng.rand(0xFF - value_y - 1).to_u8
+
+            instruction = (0x8005 | register_x << 8 | register_y << 4).to_u16
+            Opcodes::RSUBV.operation.call(chip8, instruction)
+
+            chip8.v[register_x].should eq(0xFF - (value_x - value_y) + 1)
+          end
+        end
+      end
+
+      it "sets vF to 1 on underflow" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+
+        (0x0..0xF).each do |register_x|
+          (0x0..0xF).each do |register_y|
+            next if register_x == register_y # Can't underflow
+
+
+            value_y = chip8.v[register_y] = rng.rand(0xFE).to_u8
+            value_x = chip8.v[register_x] = value_y + 1 + rng.rand(0xFF - value_y - 1).to_u8
+
+            instruction = (0x8005 | register_x << 8 | register_y << 4).to_u16
+            Opcodes::RSUBV.operation.call(chip8, instruction)
+
+            chip8.v[0xF].should eq(1)
+          end
+        end
+      end
+    end
+
     describe "CALL" do
       it "sets PC to specified address" do
         chip8 = Chip8.new(DummyIOController.new)
@@ -581,6 +656,86 @@ module Tchipi8
           Opcodes::MOV.operation.call(chip8, 0xFF65.to_u16)
           chip8.v[0..x].should eq(expected)
           chip8.v[x + 1..].each { |k| k.should eq(0) }
+        end
+      end
+    end
+
+    describe "RSHIFT" do
+      it "shifts right 1 bit from vY and assigns it to vX" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+
+        (0..0xE).each do |x|
+          y = x + 1
+          source = chip8.v[y] = rng.rand(0xFF).to_u8
+
+          Opcodes::RSHIFT.operation.call(chip8, (0x8006 | x << 8 | y << 4).to_u16)
+          chip8.v[x].should eq(source >> 1)
+        end
+      end
+
+      it "sets vF to the bit shifted out" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+
+        (0..0xE).each do |x|
+          y = x + 1
+          chip8.v[y] = rng.rand(0xFF).to_u8
+
+          Opcodes::RSHIFT.operation.call(chip8, (0x8006 | x << 8 | y << 4).to_u16)
+          chip8.v[0xF].should eq(chip8.v[y] & 0x01)
+        end
+      end
+
+      it "overwrites vF with shifted bit even when vF is destination" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+
+        (0..0xE).each do |y|
+          chip8.v[y] = rng.rand(0xFF).to_u8
+
+          Opcodes::RSHIFT.operation.call(chip8, (0x8006 | 0xF << 8 | y << 4).to_u16)
+          chip8.v[0xF].should eq(chip8.v[y] & 0x01)
+        end
+      end
+    end
+
+    describe "LSHIFT" do
+      it "shifts left 1 bit from vY and assigns it to vX" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+
+        (0..0xE).each do |x|
+          y = x + 1
+          source = chip8.v[y] = rng.rand(0xFF).to_u8
+
+          Opcodes::LSHIFT.operation.call(chip8, (0x8006 | x << 8 | y << 4).to_u16)
+          chip8.v[x].should eq(source << 1)
+        end
+      end
+
+      it "sets vF to the bit shifted out" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+
+        (0..0xE).each do |x|
+          y = x + 1
+          chip8.v[y] = rng.rand(0xFF).to_u8
+
+          Opcodes::LSHIFT.operation.call(chip8, (0x8006 | x << 8 | y << 4).to_u16)
+          chip8.v[0xF].should eq(chip8.v[y] & 0x80)
+        end
+      end
+
+      it "overwrites vF with shifted bit even when vF is destination" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+
+        (0..0xE).each do |y|
+          chip8.v[y] = rng.rand(0xFF).to_u8
+
+          Opcodes::LSHIFT.operation.call(chip8, (0x8006 | 0xF << 8 | y << 4).to_u16)
+          chip8.v[0xF].should eq(chip8.v[y] & 0x80)
         end
       end
     end

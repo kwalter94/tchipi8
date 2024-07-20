@@ -138,10 +138,10 @@ module Tchipi8
           end
         end
 
-        it "decodes RSUB (0x8??7)" do
+        it "decodes RSUBV (0x8??7)" do
           (0x00..0xFF).each do |registers|
             instruction = (0x8007 | (registers << 4)).to_u16
-            Decoder.decode(instruction).should eq(Opcodes::RSUB)
+            Decoder.decode(instruction).should eq(Opcodes::RSUBV)
           end
         end
 

@@ -38,7 +38,7 @@ module Tchipi8
         when Opcodes::ADDV.opcode then Opcodes::ADDV
         when Opcodes::SUBV.opcode then Opcodes::SUBV
         when Opcodes::RSHIFT.opcode then Opcodes::RSHIFT
-        when Opcodes::RSUB.opcode then Opcodes::RSUB
+        when Opcodes::RSUBV.opcode then Opcodes::RSUBV
         when Opcodes::LSHIFT.opcode then Opcodes::LSHIFT
         else raise InvalidInstruction.new(instruction)
         end
