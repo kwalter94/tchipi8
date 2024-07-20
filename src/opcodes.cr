@@ -133,6 +133,12 @@ module Tchipi8
 
     # Set vX to result of vX - vY, setting vF to 0 or 1 if underflow or not even if X == F
     SUBV = define_opcode(0x8FF5.to_u16, "sub", 200) do |chip8, instruction|
+      x = (instruction & 0x0F00) >> 8
+      y = (instruction & 0x00F0) >> 4
+
+      is_underflowing = chip8.v[x] < chip8.v[y]
+      chip8.v[x] = chip8.v[x] &- chip8.v[y]
+      chip8.v[0xF] = (is_underflowing ? 1 : 0).to_u8
     end
 
     # Set vX to result of vY >> 1, setting vF to shifted out bit even if X == F
