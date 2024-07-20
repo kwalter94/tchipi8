@@ -10,7 +10,7 @@ module Tchipi8
   class Chip8
     property io : IO::Controller
     property pc : UInt16
-    property l : UInt16
+    property i : UInt16
     property v : Array(UInt8)
     property sound_timer : UInt8
     property delay_timer : UInt8
@@ -19,7 +19,7 @@ module Tchipi8
 
     def initialize(@io)
       @pc = 0
-      @l = 0
+      @i = 0
       @v = Array(UInt8).new(VREG_COUNT, 0)
       @sound_timer = 0
       @delay_timer = 0
