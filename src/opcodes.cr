@@ -159,6 +159,7 @@ module Tchipi8
 
     # Set register I to k
     SETI = define_opcode(0xAFFF.to_u16, "seti", 55) do |chip8, instruction|
+      chip8.i = 0x0FFF.to_u16 & instruction
     end
 
     # Jump to v0 + k
@@ -199,22 +200,48 @@ module Tchipi8
 
     # Add vX to I
     ADDI = define_opcode(0xFF1E.to_u16, "addi", 86) do |chip8, instruction|
+      x = (instruction & 0x0F00) >> 8
+      chip8.i &+= chip8.v[x]
     end
 
     # Copy vX's low nibble to I
     COPYVI = define_opcode(0xFF29.to_u16, "copyvi", 91) do |chip8, instruction|
+      x = (instruction & 0x0F00) >> 8
+      chip8.i = 0x0F.to_u16 & chip8.v[x]
     end
 
     # Copy vX as BCD to I[0,2]
     MOVMBCD = define_opcode(0xFF33.to_u16, "movmbcd", 927) do |chip8, instruction|
+      x = (instruction & 0x0F00) >> 8
+
+      # No information on what do when I is out of bounds, doing nothing
+      # feels like a lesser evil than anything else
+      rem = chip8.v[x]
+      chip8.memory[chip8.i], rem = rem.divmod(100) if chip8.i < chip8.memory.size
+      chip8.memory[chip8.i + 1], rem = rem.divmod(10) if chip8.i + 1 < chip8.memory.size
+      chip8.memory[chip8.i + 2] = rem % 10 if chip8.i + 2 < chip8.memory.size
     end
 
     # Copy v[0,X] to I[0,X]
     MOVM = define_opcode(0xFF55.to_u16, "movm", 605) do |chip8, instruction|
+      x = (instruction & 0x0F00) >> 8
+
+      (0..x).each do |i|
+        break if chip8.i + i >= chip8.memory.size
+
+        chip8.memory[chip8.i + i] = chip8.v[i]
+      end
     end
 
     # Copy I[0,X] to v[0,X]
     MOV = define_opcode(0xFF65.to_u16, "mov", 605) do |chip8, instruction|
+      x = (instruction & 0x0F00) >> 8
+
+      (0..x).each do |i|
+        break if chip8.i + i >= chip8.memory.size
+
+        chip8.v[i] = chip8.memory[chip8.i + i]
+      end
     end
   end
 end

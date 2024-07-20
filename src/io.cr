@@ -14,7 +14,7 @@ module Tchipi8
 
     module Controller
       abstract def clear_display : Nil
-      abstract def draw_sprite(x : Int, y : Int, colour : Colour) : Nil
+      abstract def draw_pixel(x : Int, y : Int, colour : Colour) : Nil
       abstract def read_key : UInt8
       abstract def sync : Nil
     end
@@ -54,18 +54,18 @@ module Tchipi8
         LibSDL.update_window_surface(@window)
       end
 
-      def draw_sprite(x : Int, y : Int, colour : Colour) : Nil
+      def draw_pixel(x : Int, y : Int, colour : Colour) : Nil
         if x < 0 || x >= CHIP8_DISPLAY_WIDTH || y < 0 || y >= CHIP8_DISPLAY_HEIGHT
           Log.warn { "Drawing out of display area: #{x}, #{y}" }
           return
         end
 
-        sprite = LibSDL::Rect.new
-        sprite.x = x * SPRITE_WIDTH
-        sprite.y = y * SPRITE_HEIGHT
-        sprite.w = SPRITE_WIDTH
-        sprite.h = SPRITE_HEIGHT
-        LibSDL.fill_rect(surface, pointerof(sprite), rgb(colour.red, colour.green, colour.blue))
+        pixel = LibSDL::Rect.new
+        pixel.x = x * SPRITE_WIDTH
+        pixel.y = y * SPRITE_HEIGHT
+        pixel.w = SPRITE_WIDTH
+        pixel.h = SPRITE_HEIGHT
+        LibSDL.fill_rect(surface, pointerof(pixel), rgb(colour.red, colour.green, colour.blue))
         LibSDL.update_window_surface(@window)
       end
 

@@ -7,7 +7,7 @@ module Tchipi8
     def clear_display : Nil
     end
 
-    def draw_sprite(x, y, colour) : Nil
+    def draw_pixel(x, y, colour) : Nil
     end
 
     def read_key : UInt8
@@ -435,6 +435,153 @@ module Tchipi8
 
         Opcodes::RET.operation.call(chip8, 0x0000.to_u16)
         chip8.stack.size.should eq(0)
+      end
+    end
+
+    describe "SETI" do
+      it "sets register I to provided constant" do
+        chip8 = Chip8.new(DummyIOController.new)
+
+        (0x000..0xFFF).each do |k|
+          Opcodes::SETI.operation.call(chip8, (0xA000 | k).to_u16)
+          chip8.i.should eq(k)
+        end
+      end
+    end
+
+    describe "ADDI" do
+      it "adds vX to I" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+
+        (0x0..0xF).each do |x|
+          chip8.v[x] = rng.rand(0xFF).to_u8
+          k = chip8.i = rng.rand(0xFFF).to_u16
+
+          Opcodes::ADDI.operation.call(chip8, (0xF01E | x << 8).to_u16)
+          chip8.i.should eq(k + chip8.v[x])
+        end
+      end
+
+      it "should rollover on overflow" do # Shouldn't occur in practice buy you never know
+        chip8 = Chip8.new(DummyIOController.new)
+
+        (0x0..0xF).each do |x|
+          (0x01..0xFF).each do |k| # We can only overflow by how much a vX can hold
+            chip8.i = 0xFFFF
+            chip8.v[x] = k.to_u8
+
+            Opcodes::ADDI.operation.call(chip8, (0xF01E | x << 8).to_u16)
+            chip8.i.should eq(k - 1)
+          end
+        end
+      end
+    end
+
+    describe "COPYVI" do
+      it "copies the lowest significant nibble of vX to I" do
+        chip8 = Chip8.new(DummyIOController.new)
+
+        (0x0..0xF).each do |x|
+          (0x00..0xFF).each do |k|
+            chip8.v[x] = k.to_u8
+
+            Opcodes::COPYVI.operation.call(chip8, (0xF029 | x << 8).to_u16)
+            chip8.i.should eq(0x0F & k)
+          end
+        end
+      end
+    end
+
+    describe "MOVMBCD" do
+      it "copies the BCD digits of vX to memory locations I[0,1,2]" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+
+        (0x0..0xF).each do |x|
+          (0x00..0xFF).each do |k|
+            chip8.v[x] = k.to_u8
+            i = chip8.i = rng.rand(0xFFD).to_u16
+
+            Opcodes::MOVMBCD.operation.call(chip8, (0xF033 | x << 8).to_u16)
+            expected = [k // 100, (k % 100) // 10, k % 10]
+            chip8.memory[i..(i + 2)].should eq(expected)
+          end
+        end
+      end
+
+      it "truncates BCD when I is out of bounds" do
+        chip8 = Chip8.new(DummyIOController.new)
+
+        (0x0..0xF).each do |x|
+          [0xFFD, 0xFFF].each do |i|
+            chip8.v[x] = 255.to_u8
+            chip8.i = i.to_u16
+
+            Opcodes::MOVMBCD.operation.call(chip8, (0xF033 | x << 8).to_u16)
+            expected = [2, 5, 5][..(0xFFF - i)]
+            chip8.memory[i..0xFFF].should eq(expected)
+          end
+        end
+      end
+    end
+
+    describe "MOVM" do
+      it "copies v[0..X] to memory locations I[0..X]" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+
+        (0x0..0xF).each do |x|
+          expected = (0..x).map { |i| chip8.v[i] = rng.rand(0x100).to_u8 }.to_a
+          i = chip8.i = rng.rand(0xFFF - x).to_u16
+
+          Opcodes::MOVM.operation.call(chip8, (0xF055 | x << 8).to_u16)
+          chip8.memory[i..i + x].should eq(expected)
+        end
+      end
+
+      it "truncates when I[X] goes out of bounds" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+
+        expected = (0..0xF).map { |x| chip8.v[x] = rng.rand(0x100).to_u8 }
+
+        (0..15).each do |i|
+          address = chip8.i = (0xFFF - i).to_u16
+
+          Opcodes::MOVM.operation.call(chip8, 0xFF55.to_u16)
+          chip8.memory[address..].should eq(expected[..i])
+        end
+      end
+    end
+
+    describe "MOV" do
+      it "copies memory locations I[0..X] to v[0..X]" do
+        rng = Random.new
+        chip8 = Chip8.new(DummyIOController.new)
+        chip8.i = rng.rand(0xFF0).to_u16
+
+        expected = (0..0xF).map { |i| chip8.memory[chip8.i + i] = rng.rand(0xFF).to_u8 }
+
+        (0..0xF).each do |x|
+          Opcodes::MOV.operation.call(chip8, (0xF065 | x << 8).to_u16)
+          chip8.v[..x].should eq(expected[..x])
+        end
+      end
+
+      it "truncates when memory locations are out of bounds" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+
+        (0..15).each do |x|
+          address = chip8.i = (0xFFF - x).to_u16
+          (0..0xF).each { |i| chip8.v[i] = 0.to_u8 }
+          expected = (0..x).map { |i| chip8.memory[chip8.i + i] = rng.rand(0xFF).to_u8 }
+
+          Opcodes::MOV.operation.call(chip8, 0xFF65.to_u16)
+          chip8.v[0..x].should eq(expected)
+          chip8.v[x + 1..].each { |k| k.should eq(0) }
+        end
       end
     end
   end
