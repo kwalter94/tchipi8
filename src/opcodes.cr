@@ -1,21 +1,27 @@
+require "time"
+
 require "./chip8"
 
 module Tchipi8
   module Opcodes
     extend self
 
-
     record Opcode,
       opcode : UInt16,
       name : String,  # Human readable name for opcode
-      micros : Int32, # Number of microseconds instruction takes
+      micros : Time::Span, # Number of microseconds instruction takes
       operation : (Chip8, UInt16) -> Nil
 
-    def define_opcode(hex_code, name, micros, &operation : (Chip8, UInt16) -> Nil)
+    def define_opcode(
+      hex_code : UInt16,
+      name : String,
+      micros : Int32,
+      &operation : (Chip8, UInt16) -> Nil
+    )
       Opcode.new(
         hex_code,
         name,
-        micros,
+        Time::Span.new(nanoseconds: micros * 1000),
         operation
       )
     end

@@ -1,4 +1,3 @@
-require "log"
 require "sdl-crystal-bindings"
 
 require "./errors"
@@ -57,11 +56,13 @@ module Tchipi8
       end
 
       def clear_pixels : Nil
+        Log.debug { "Clearing display" }
         LibSDL.fill_rect(surface, nil, rgb(0x00, 0x00, 0x00))
         LibSDL.update_window_surface(@window)
       end
 
       def set_pixel(x : Int, y : Int, state : PixelState) : Nil
+        Log.debug { "Drawing pixel at (#{x}, #{y})" }
         if x < 0 || x >= CHIP8_DISPLAY_WIDTH || y < 0 || y >= CHIP8_DISPLAY_HEIGHT
           Log.warn { "Drawing out of display area: #{x}, #{y}" }
           return

@@ -1,20 +1,41 @@
+require "log"
+
 require "./chip8"
 require "./decoder"
-require "./display"
+require "./io"
 require "./opcodes"
 
 
 module Tchipi8
   VERSION = "0.1.0"
 
-  chip8 = Chip8.new
-  chip8.display.clear
-  done = false
+  Log = ::Log.for("tchipi8")
+  Log.level = :debug
 
-  loop do
-    chip8.display.keys_pressed.each { |key| done = true if (key & 0xF0) == 0xF0 }
-    break if done
+  io_controller = IO::SDLController.new
+  chip8 = Chip8.new(io_controller)
+  chip8.io.clear_pixels
 
-    sleep(1.0 / 60)
+  if ARGV.empty?
+    Log.error { "No program file specified" }
+    exit(1)
+  end
+
+  file_name = ARGV[0]
+
+  Log.debug { "Loading program from #{file_name}" }
+  File.open(file_name, "rb") do |file|
+    chip8.load_program(file)
+  end
+
+  begin
+    chip8.run
+  rescue Shutdown
+    Log.debug { "Shutdown requested" }
+    io_controller.destroy
+  rescue error
+    Log.error { "Unhandled exception, shutting down" }
+    io_controller.destroy
+    raise error
   end
 end

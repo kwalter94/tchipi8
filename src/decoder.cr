@@ -12,6 +12,7 @@ module Tchipi8
 
   module Decoder
     def self.decode(instruction : UInt16) : Opcodes::Opcode
+      Log.debug { "Decoding instruction #{instruction.to_s(16)}" }
       case instruction & 0xF000
       when 0x0000
         case
