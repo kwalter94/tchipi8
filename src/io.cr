@@ -7,23 +7,30 @@ module Tchipi8
   class Shutdown < Tchipi8Error; end
 
   module IO
-    record Colour,
-      red : UInt8,
-      green : UInt8,
-      blue : UInt8
+    enum PixelState
+      On
+      Off
+
+      def to_u8 : UInt8
+        return 1.to_u8 if on?
+
+        0.to_u8
+      end
+    end
 
     module Controller
-      abstract def clear_display : Nil
-      abstract def draw_pixel(x : Int, y : Int, colour : Colour) : Nil
+      abstract def clear_pixels : Nil
+      abstract def set_pixel(x : Int, y : Int, state : PixelState) : Nil
       abstract def read_key : UInt8
       abstract def sync : Nil
     end
 
+    CHIP8_DISPLAY_WIDTH = 64
+    CHIP8_DISPLAY_HEIGHT = 32
+
     class SDLController
       include Controller
 
-      CHIP8_DISPLAY_WIDTH = 64
-      CHIP8_DISPLAY_HEIGHT = 32
       SDL_DISPLAY_WIDTH = 640
       SDL_DISPLAY_HEIGHT = SDL_DISPLAY_WIDTH / 2
       SPRITE_WIDTH = SDL_DISPLAY_WIDTH / CHIP8_DISPLAY_WIDTH
@@ -49,12 +56,12 @@ module Tchipi8
         end
       end
 
-      def clear_display : Nil
+      def clear_pixels : Nil
         LibSDL.fill_rect(surface, nil, rgb(0x00, 0x00, 0x00))
         LibSDL.update_window_surface(@window)
       end
 
-      def draw_pixel(x : Int, y : Int, colour : Colour) : Nil
+      def set_pixel(x : Int, y : Int, state : PixelState) : Nil
         if x < 0 || x >= CHIP8_DISPLAY_WIDTH || y < 0 || y >= CHIP8_DISPLAY_HEIGHT
           Log.warn { "Drawing out of display area: #{x}, #{y}" }
           return
@@ -65,7 +72,11 @@ module Tchipi8
         pixel.y = y * SPRITE_HEIGHT
         pixel.w = SPRITE_WIDTH
         pixel.h = SPRITE_HEIGHT
-        LibSDL.fill_rect(surface, pointerof(pixel), rgb(colour.red, colour.green, colour.blue))
+        colour = case state
+                 in .on? then rgb(0xFF, 0xFF, 0xFF)
+                 in .off? then rgb(0x00, 0x00, 0x00)
+                 end
+        LibSDL.fill_rect(surface, pointerof(pixel), colour)
         LibSDL.update_window_surface(@window)
       end
 

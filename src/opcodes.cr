@@ -33,7 +33,13 @@ module Tchipi8
 
     # Clear screen
     CLS = define_opcode(0x00E0.to_u16, "cls", 109) do |chip8, instruction|
-      chip8.io.clear_display
+      (0...chip8.pixels.size).each do |row|
+        (0...chip8.pixels[row].size).each do |col|
+          chip8.pixels[row][col] = 0
+        end
+      end
+
+      chip8.io.clear_pixels
     end
 
     # Return from subroutine
@@ -188,8 +194,41 @@ module Tchipi8
     RAND = define_opcode(0xCFFF.to_u16, "rand", 164) do |chip8, instruction|
     end
 
-    # Draw sprite at position [vX, vY] using sprite data from location in register I
+    # Draw sprite at position [vX, vY] using sprite data from location I[0..N]
     DRAW = define_opcode(0xDFFF.to_u16, "draw", 22734) do |chip8, instruction|
+      x = (0x0F00 & instruction) >> 8
+      y = (0x00F0 & instruction) >> 4
+      n = 0x000F & instruction
+
+      dirty_pixels = [] of Tuple(Int32, Int32)
+      has_unset_pixel = false
+
+      (0..n).each do |row|
+        pixmap = chip8.memory[chip8.i + row]
+
+        (0..7).each do |col|
+          pixel = (pixmap >> 7 - col) & 0x01
+
+          adjusted_col = chip8.v[x].to_i32 + col
+          adjusted_row = chip8.v[y].to_i32 + row
+
+          next if chip8.pixels[adjusted_row][adjusted_col] == pixel
+
+          has_unset_pixel = true if pixel.zero?
+
+          chip8.pixels[adjusted_row][adjusted_col] = pixel
+          dirty_pixels << {adjusted_col, adjusted_row}
+        end
+      end
+
+      chip8.v[0xF] = has_unset_pixel ? 1.to_u8 : 0.to_u8
+      dirty_pixels.each do |col, row|
+        chip8.io.set_pixel(
+          col,
+          row,
+          chip8.pixels[row][col].zero? ? IO::PixelState::Off : IO::PixelState::On
+        )
+      end
     end
 
     # Skip next opcode if key pressed matches lower 4 bits vX

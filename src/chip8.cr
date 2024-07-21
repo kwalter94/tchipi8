@@ -2,6 +2,8 @@ require "./io"
 
 module Tchipi8
   ADDRESS_MASK = 0x0FFF # Addresses are 12 bytes long
+  DISPLAY_WIDTH = 64
+  DISPLAY_HEIGHT = 32
   MAX_RAM = 4096  # Bytes
   MAX_STACK = 16  # 16 bit words
   VREG_COUNT = 16 # Number of general purpose registers
@@ -9,6 +11,7 @@ module Tchipi8
 
   class Chip8
     property io : IO::Controller
+    property pixels : Array(Array(UInt8))
     property pc : UInt16
     property i : UInt16
     property v : Array(UInt8)
@@ -18,6 +21,7 @@ module Tchipi8
     property stack : Array(UInt16)
 
     def initialize(@io)
+      @pixels = DISPLAY_HEIGHT.times.map { Array(UInt8).new(DISPLAY_WIDTH, 0) }.to_a
       @pc = 0
       @i = 0
       @v = Array(UInt8).new(VREG_COUNT, 0)

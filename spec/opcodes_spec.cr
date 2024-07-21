@@ -4,10 +4,33 @@ module Tchipi8
   class DummyIOController
     include IO::Controller
 
-    def clear_display : Nil
+    getter pixels
+
+    def initialize
+      @pixels = [] of Array(IO::PixelState)
+
+      (0...IO::CHIP8_DISPLAY_HEIGHT).each do
+        @pixels << Array.new(IO::CHIP8_DISPLAY_WIDTH, IO::PixelState::Off)
+      end
     end
 
-    def draw_pixel(x, y, colour) : Nil
+    def clear_pixels : Nil
+      (0...@pixels.size).each do |y|
+        (0...@pixels[y].size).each do |x|
+          @pixels[y][x] = IO::PixelState::Off
+        end
+      end
+    end
+
+    def set_pixel(x, y, state) : Nil
+      @pixels[y][x] = state
+    end
+
+    def render_display : Nil
+      @pixels.each do |row|
+        row.each { |pixel| print(pixel.on? ? "*" : ".") }
+        print("\n")
+      end
     end
 
     def read_key : UInt8
@@ -737,6 +760,114 @@ module Tchipi8
           Opcodes::LSHIFT.operation.call(chip8, (0x8006 | 0xF << 8 | y << 4).to_u16)
           chip8.v[0xF].should eq(chip8.v[y] & 0x80)
         end
+      end
+    end
+
+    describe "CLS" do
+      it "requests clear_pixels on connected I/O devices" do
+        io = DummyIOController.new
+        io.set_pixel(6, 9, IO::PixelState::On)
+
+        Opcodes::CLS.operation.call(Chip8.new(io), 0x00E0.to_u16)
+        io.pixels.each do |row|
+          row.each do |pixel|
+            pixel.should eq(IO::PixelState::Off)
+          end
+        end
+      end
+    end
+
+    describe "DRAW" do
+      it "draws sprite at {vX, vY}" do
+        io = DummyIOController.new
+        chip8 = Chip8.new(io)
+        rng = Random.new
+
+        sprite = [0x81, 0x42, 0x24, 0x18] of UInt8
+        sprite.each_with_index { |row, i| chip8.memory[i] = row }
+        chip8.i = 0
+
+        [{0, 0}, {32, 16}, {56, 24}].each do |sprite_x, sprite_y|
+          (0..0xE).each do |x|
+            (0..0xE).each do |y|
+              Opcodes::CLS.operation.call(chip8, Opcodes::CLS.opcode)
+              chip8.v[x] = sprite_x.to_u8
+              chip8.v[y] = sprite_y.to_u8
+              instruction = (0xD000 | x << 8 | y << 4 | sprite.size).to_u16
+
+              Opcodes::DRAW.operation.call(chip8, instruction)
+              # io.render_display
+
+              sprite.each_with_index do |pixmap, row|
+                (0..7).each do |col|
+                  pixel_state = (pixmap >> 7 - col) & 0x01
+                  io.pixels[row + chip8.v[y]][col + chip8.v[x]].to_u8.should eq(pixel_state)
+                end
+              end
+            end
+          end
+        end
+      end
+
+      it "draws N pixels as specified in instruction" do
+        io = DummyIOController.new
+        chip8 = Chip8.new(io)
+        chip8.i = 0x0420.to_u16
+
+        (0...0xF).each do |i|
+          Opcodes::CLS.operation.call(chip8, Opcodes::CLS.opcode)
+          chip8.memory[chip8.i + i] = 0xFF.to_u8
+          chip8.v[0] = 0
+          chip8.v[1] = 0
+
+          instruction = (0xD010 | i + 1).to_u16
+
+          Opcodes::DRAW.operation.call(chip8, instruction)
+          io.pixels
+            .map { |row| row[0...8].select(&.on?).size }
+            .reduce { |a, b| a + b }
+            .should eq((i + 1) * 8)
+        end
+      end
+
+      it "sets vF if any set pixel is unset" do
+        io = DummyIOController.new
+        chip8 = Chip8.new(io)
+        rng = Random.new
+
+        chip8.i = 0x100
+        chip8.memory[chip8.i] = 0xFF
+        chip8.memory[chip8.i + 1] = 0xFF
+        chip8.v[0x4] = 0
+        chip8.v[0x2] = 0
+        instruction = (0xD000 | 0x4 << 8 | 0x2 << 4 | 0x2).to_u16
+        Opcodes::DRAW.operation.call(chip8, instruction)
+
+        chip8.memory[chip8.i] = 0x00
+        Opcodes::DRAW.operation.call(chip8, instruction)
+
+        chip8.v[0xF].should eq(1)
+      end
+
+      it "unsets vF if no pixels are unset" do
+        io = DummyIOController.new
+        chip8 = Chip8.new(io)
+        rng = Random.new
+
+        chip8.i = 0x100
+        chip8.memory[chip8.i] = 0xFF
+        chip8.memory[chip8.i + 1] = 0xFF
+        chip8.v[0x4] = 0
+        chip8.v[0x2] = 0
+        instruction = (0xD000 | 0x4 << 8 | 0x2 << 4 | 0x2).to_u16
+        Opcodes::DRAW.operation.call(chip8, instruction)
+
+        chip8.memory[chip8.i] = 0x00
+        Opcodes::DRAW.operation.call(chip8, instruction) # This should set vF
+        Opcodes::DRAW.operation.call(chip8, instruction) # Unset vF
+
+
+        chip8.v[0xF].should eq(0)
       end
     end
   end
