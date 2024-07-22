@@ -485,7 +485,7 @@ module Tchipi8
           (0x0..0xF).each do |y|
             chip8.pc = address = rng.rand(0xFFF).to_u16
             chip8.v[x] = chip8.v[y] = rng.rand(0xFF).to_u8
-            instruction = (0x5000 | x << 8 | x << 4).to_u16
+            instruction = (0x5000 | x << 8 | y << 4).to_u16
 
             Opcodes::SKIPIFEQV.operation.call(chip8, instruction)
             chip8.pc.should eq(address + 2)
@@ -509,6 +509,74 @@ module Tchipi8
             Opcodes::SKIPIFEQV.operation.call(chip8, instruction)
             chip8.pc.should eq(address)
           end
+        end
+      end
+    end
+
+    describe "SKIPIFNEQV" do
+      it "increments PC by two if vX != vY" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+
+        (0x0..0xF).each do |x|
+          (0x0..0xF).each do |y|
+            next if x == y
+
+            chip8.pc = address = rng.rand(0xFFF).to_u16
+            chip8.v[x] = rng.rand(0xFE).to_u8
+            chip8.v[y] = chip8.v[x] + 1
+            instruction = (0x9000 | x << 8 | y << 4).to_u16
+
+            Opcodes::SKIPIFNEQV.operation.call(chip8, instruction)
+            chip8.pc.should eq(address + 2)
+          end
+        end
+      end
+
+      it "does not modify PC if vX == vY" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+
+        (0x0..0xF).each do |x|
+          (0x0..0xF).each do |y|
+            chip8.pc = address = rng.rand(0xFFF).to_u16
+            chip8.v[x] = chip8.v[y] = rng.rand(0xFF).to_u8
+            instruction = (0x9000 | x << 8 | y << 4).to_u16
+
+            Opcodes::SKIPIFNEQV.operation.call(chip8, instruction)
+            chip8.pc.should eq(address)
+          end
+        end
+      end
+    end
+
+    describe "JMPREL" do
+      it "sets pc to v0 + NNN" do
+        chip8 = Chip8.new(DummyIOController.new)
+        address = chip8.v[0] = 0x69
+        offset = Random.new.rand(0x0FFF)
+        instruction = (0xB000 | offset).to_u16
+        Opcodes::JMPREL.operation.call(chip8, instruction)
+        chip8.pc.should eq(address.to_u16 + offset)
+      end
+    end
+
+    describe "RAND" do
+      it "sets vX to a random value AND-ed with k" do
+        chip8 = Chip8.new(DummyIOController.new)
+
+        # Shitty test but still better than nothing, how
+        # the eff do you test a random function?
+        (0..0xF).each do |x|
+          values = 1000.times.map do
+            chip8.v[x] = 0
+            instruction = (0xC000 | x << 8 | 0x69).to_u16
+            Opcodes::RAND.operation.call(chip8, instruction)
+            chip8.v[x].to_u32
+          end
+
+          values = values.to_a
+          (values.sum // values.size).should_not eq(0)
         end
       end
     end

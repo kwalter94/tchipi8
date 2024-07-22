@@ -185,6 +185,10 @@ module Tchipi8
 
     # Skip next opcode if vX != vY
     SKIPIFNEQV = define_opcode(0x9FF0.to_u16, "skipifneqv", 73) do |chip8, instruction|
+      x = (instruction & 0x0F00) >> 8
+      y = (instruction & 0x00F0) >> 4
+
+      chip8.pc += 2 if chip8.v[x] != chip8.v[y]
     end
 
     # Set register I to k
@@ -194,10 +198,16 @@ module Tchipi8
 
     # Jump to v0 + k
     JMPREL = define_opcode(0xBFFF.to_u16, "jmprel", 105) do |chip8, instruction|
+      n = instruction & 0x0FFF
+      chip8.pc = chip8.v[0].to_u16 + n
     end
 
     # Set vX to random value AND-ed with k (byte)
     RAND = define_opcode(0xCFFF.to_u16, "rand", 164) do |chip8, instruction|
+      x = (instruction & 0x0F00) >> 8
+      n = instruction & 0x00FF
+
+      chip8.v[x] = (Random.new.rand(0xFF) & n).to_u8
     end
 
     # Draw sprite at position [vX, vY] using sprite data from location I[0..N]
