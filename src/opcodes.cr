@@ -228,6 +228,11 @@ module Tchipi8
           adjusted_col = chip8.v[x].to_i32 + col
           adjusted_row = chip8.v[y].to_i32 + row
 
+          if adjusted_row >= chip8.pixels.size || adjusted_col >= chip8.pixels[0].size
+            Log.warn { "Attempted to write out of bounds: (#{adjusted_col}, #{adjusted_row})" }
+            next
+          end
+
           next if chip8.pixels[adjusted_row][adjusted_col] == pixel
 
           has_unset_pixel = true if pixel.zero?

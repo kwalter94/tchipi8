@@ -935,7 +935,6 @@ module Tchipi8
         Opcodes::DRAW.operation.call(chip8, instruction) # This should set vF
         Opcodes::DRAW.operation.call(chip8, instruction) # Unset vF
 
-
         chip8.v[0xF].should eq(0)
       end
     end
