@@ -823,6 +823,7 @@ module Tchipi8
           instruction = (0xD010 | i + 1).to_u16
 
           Opcodes::DRAW.operation.call(chip8, instruction)
+          # io.render_display
           io.pixels
             .map { |row| row[0...8].select(&.on?).size }
             .reduce { |a, b| a + b }

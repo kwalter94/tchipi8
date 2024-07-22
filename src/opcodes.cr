@@ -209,7 +209,7 @@ module Tchipi8
       dirty_pixels = [] of Tuple(Int32, Int32)
       has_unset_pixel = false
 
-      (0..n).each do |row|
+      (0...n).each do |row|
         pixmap = chip8.memory[chip8.i + row]
 
         (0..7).each do |col|

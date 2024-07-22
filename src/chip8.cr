@@ -99,7 +99,7 @@ module Tchipi8
     end
 
     private def execute_instruction(opcode : Opcodes::Opcode, instruction : UInt16) : Nil
-      Log.debug { "Executing instruction #{opcode.name}(#{instruction})" }
+      Log.debug { "Executing instruction #{opcode.name}(#{instruction.to_s(16)})" }
       start_time = Time.monotonic
       opcode.operation.call(self, instruction)
       time_elapsed = Time.monotonic - start_time
