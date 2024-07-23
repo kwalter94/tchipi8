@@ -245,10 +245,10 @@ module Tchipi8
       end
 
       context "0xF??? range instructions" do
-        it "decodes COPYDV (0xF?07)" do
+        it "decodes SETVD (0xF?07)" do
           (0x0..0xF).each do |register|
             instruction = (0xF007 | (register << 8)).to_u16
-            Decoder.decode(instruction).should eq(Opcodes::COPYDV)
+            Decoder.decode(instruction).should eq(Opcodes::SETVD)
           end
         end
 
@@ -259,17 +259,17 @@ module Tchipi8
           end
         end
 
-        it "decodes COPYVD (0xF?15)" do
+        it "decodes SETDV (0xF?15)" do
           (0x0..0xF).each do |register|
             instruction = (0xF015 | (register << 8)).to_u16
-            Decoder.decode(instruction).should eq(Opcodes::COPYVD)
+            Decoder.decode(instruction).should eq(Opcodes::SETDV)
           end
         end
 
-        it "decodes COPYVS (0xF?18)" do
+        it "decodes SETSV (0xF?18)" do
           (0x0..0xF).each do |register|
             instruction = (0xF018 | (register << 8)).to_u16
-            Decoder.decode(instruction).should eq(Opcodes::COPYVS)
+            Decoder.decode(instruction).should eq(Opcodes::SETSV)
           end
         end
 
@@ -280,10 +280,10 @@ module Tchipi8
           end
         end
 
-        it "decodes COPYVI (0xF?29)" do
+        it "decodes SETIV (0xF?29)" do
           (0x0..0xF).each do |register|
             instruction = (0xF029 | (register << 8)).to_u16
-            Decoder.decode(instruction).should eq(Opcodes::COPYVI)
+            Decoder.decode(instruction).should eq(Opcodes::SETIV)
           end
         end
 
@@ -310,12 +310,12 @@ module Tchipi8
 
         it "raises InvalidInstruction for invalid 0xF??? range opcodes" do
           valid_opcodes = {
-            Opcodes::COPYDV,
+            Opcodes::SETVD,
             Opcodes::READKEY,
-            Opcodes::COPYVD,
-            Opcodes::COPYVS,
+            Opcodes::SETDV,
+            Opcodes::SETSV,
             Opcodes::ADDI,
-            Opcodes::COPYVI,
+            Opcodes::SETIV,
             Opcodes::MOVMBCD,
             Opcodes::MOVM,
             Opcodes::MOV,

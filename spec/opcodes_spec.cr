@@ -644,7 +644,7 @@ module Tchipi8
       end
     end
 
-    describe "COPYVI" do
+    describe "SETIV" do
       it "copies the lowest significant nibble of vX to I" do
         chip8 = Chip8.new(DummyIOController.new)
 
@@ -652,7 +652,7 @@ module Tchipi8
           (0x00..0xFF).each do |k|
             chip8.v[x] = k.to_u8
 
-            Opcodes::COPYVI.operation.call(chip8, (0xF029 | x << 8).to_u16)
+            Opcodes::SETIV.operation.call(chip8, (0xF029 | x << 8).to_u16)
             chip8.i.should eq(0x0F & k)
           end
         end
@@ -936,6 +936,52 @@ module Tchipi8
         Opcodes::DRAW.operation.call(chip8, instruction) # Unset vF
 
         chip8.v[0xF].should eq(0)
+      end
+    end
+
+    describe "SETDV" do
+      it "sets delay timer from vX" do
+        chip8 = Chip8.new(DummyIOController.new)
+
+        (0..0xF).each do |x|
+          (0..0xFF).each do |value|
+            chip8.v[x] = value.to_u8
+            instruction = (0xF015 | x << 8).to_u16
+            Opcodes::SETDV.operation.call(chip8, instruction)
+            chip8.delay_timer.should eq(value)
+          end
+        end
+      end
+    end
+
+    describe "SETSV" do
+      it "sets sound timer from vX" do
+        chip8 = Chip8.new(DummyIOController.new)
+
+        (0..0xF).each do |x|
+          (0..0xFF).each do |value|
+            chip8.v[x] = value.to_u8
+            instruction = (0xF018 | x << 8).to_u16
+            Opcodes::SETSV.operation.call(chip8, instruction)
+            chip8.sound_timer.should eq(value)
+          end
+        end
+      end
+
+    end
+
+    describe "SETVD" do
+      it "copies delay timer value to vX" do
+        chip8 = Chip8.new(DummyIOController.new)
+        rng = Random.new
+        (0..0xF).each do |x|
+          (0..0xFF).each do |value|
+            chip8.delay_timer = value.to_u8
+            instruction = (0xF015 | x << 8).to_u16
+            Opcodes::SETVD.operation.call(chip8, instruction)
+            chip8.v[x].should eq(value)
+          end
+        end
       end
     end
   end

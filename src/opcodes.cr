@@ -261,7 +261,9 @@ module Tchipi8
     end
 
     # Copy delay timer value to vX
-    COPYDV = define_opcode(0xFF07.to_u16, "copydv", 45) do |chip8, instruction|
+    SETVD = define_opcode(0xFF07.to_u16, "setvd", 45) do |chip8, instruction|
+      x = (instruction & 0x0F00) >> 8
+      chip8.v[x] = chip8.delay_timer
     end
 
     # Read next key pressed, write it to vX (clear screen in Megachip mode)
@@ -269,11 +271,15 @@ module Tchipi8
     end
 
     # Set delay timer from vX
-    COPYVD = define_opcode(0xFF15.to_u16, "copyvd", 45) do |chip8, instruction|
+    SETDV = define_opcode(0xFF15.to_u16, "setdv", 45) do |chip8, instruction|
+      x = (instruction & 0x0F00) >> 8
+      chip8.delay_timer = chip8.v[x]
     end
 
     # Set sound timer from vX (beep as long as sound timer > 0)
-    COPYVS = define_opcode(0xFF18.to_u16, "copyvs", 45) do |chip8, instruction|
+    SETSV = define_opcode(0xFF18.to_u16, "setsv", 45) do |chip8, instruction|
+      x = (instruction & 0x0F00) >> 8
+      chip8.sound_timer = chip8.v[x]
     end
 
     # Add vX to I
@@ -283,7 +289,7 @@ module Tchipi8
     end
 
     # Copy vX's low nibble to I
-    COPYVI = define_opcode(0xFF29.to_u16, "copyvi", 91) do |chip8, instruction|
+    SETIV = define_opcode(0xFF29.to_u16, "setiv", 91) do |chip8, instruction|
       x = (instruction & 0x0F00) >> 8
       chip8.i = 0x0F.to_u16 & chip8.v[x]
     end

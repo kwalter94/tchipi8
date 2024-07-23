@@ -59,12 +59,12 @@ module Tchipi8
         end
       when 0xF000
         case instruction | 0x0F00
-        when Opcodes::COPYDV.opcode then Opcodes::COPYDV
+        when Opcodes::SETDV.opcode then Opcodes::SETDV
         when Opcodes::READKEY.opcode then Opcodes::READKEY
-        when Opcodes::COPYVD.opcode then Opcodes::COPYVD
-        when Opcodes::COPYVS.opcode then Opcodes::COPYVS
+        when Opcodes::SETVD.opcode then Opcodes::SETVD
+        when Opcodes::SETSV.opcode then Opcodes::SETSV
         when Opcodes::ADDI.opcode then Opcodes::ADDI
-        when Opcodes::COPYVI.opcode then Opcodes::COPYVI
+        when Opcodes::SETIV.opcode then Opcodes::SETIV
         when Opcodes::MOVMBCD.opcode then Opcodes::MOVMBCD
         when Opcodes::MOVM.opcode then Opcodes::MOVM
         when Opcodes::MOV.opcode then Opcodes::MOV

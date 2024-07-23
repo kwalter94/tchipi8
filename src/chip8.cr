@@ -35,6 +35,8 @@ module Tchipi8
 
 
   class Chip8
+    TICK_PERIOD = Time::Span.new(nanoseconds: 1_000_000_000 // 60)
+
     property io : IO::Controller
     property pixels : Array(Array(UInt8))
     property pc : UInt16
@@ -54,6 +56,7 @@ module Tchipi8
       @delay_timer = 0
       @memory = Array(UInt8).new(MAX_RAM, 0)
       @stack = Array(UInt16).new
+      @last_tick = Time::Span.zero
 
       self.load_font
     end
@@ -72,18 +75,28 @@ module Tchipi8
 
     def run : Nil
       Log.debug { "Running Chip8..." }
+      last_tick = Time.monotonic
+
       loop do
         @io.sync
+        sync_timers
         instruction = next_instruction
         opcode = Decoder.decode(instruction)
         execute_instruction(opcode, instruction)
-
-        sleep(1.0 / 60)
       end
     end
 
+    private def sync_timers : Nil
+      @last_tick = Time.monotonic if @last_tick.zero?
+      return if Time.monotonic - @last_tick < TICK_PERIOD
 
-    def next_instruction : UInt16
+      Log.debug { "Synchronising sound and delay timers" }
+      @delay_timer -= 1 if delay_timer > 0
+      @sound_timer -= 1 if sound_timer > 0
+      @last_tick = Time.monotonic
+    end
+
+    private def next_instruction : UInt16
       Log.debug { "Fetching instruction at #{@pc.to_s(16)}" }
       instruction = (memory[@pc].to_u16 << 8) | memory[@pc + 1]
       @pc += 2
