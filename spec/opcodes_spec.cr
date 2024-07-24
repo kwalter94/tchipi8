@@ -14,6 +14,9 @@ module Tchipi8
       end
     end
 
+    def flush_pixels : Nil
+    end
+
     def clear_pixels : Nil
       (0...@pixels.size).each do |y|
         (0...@pixels[y].size).each do |x|
@@ -33,8 +36,8 @@ module Tchipi8
       end
     end
 
-    def read_key : UInt8
-      0xF
+    def read_key : IO::Key?
+      nil
     end
 
     def sync : Nil
@@ -121,8 +124,8 @@ module Tchipi8
         chip8 = Chip8.new(DummyIOController.new)
         rng = Random.new
 
-        (0x0..0xF).each do |register_x|
-          (0x0..0xF).each do |register_y|
+        (0x0..0xE).each do |register_x|
+          (0x0..0xE).each do |register_y|
             chip8.v[register_x] = value_x = rng.rand(256).to_u8
             chip8.v[register_y] = value_y = register_x == register_y ? value_x : rng.rand(256).to_u8
 
@@ -133,6 +136,19 @@ module Tchipi8
           end
         end
       end
+
+      it "resets VF to 0" do
+        chip8 = Chip8.new(DummyIOController.new)
+
+        chip8.v[0x0] = 0x69
+        chip8.v[0xF] = 0x42
+        Opcodes::OR.operation.call(chip8, 0x80F1.to_u16)
+        chip8.v[0xF].should eq(0)
+
+        chip8.v[0xF] = 0x42
+        Opcodes::OR.operation.call(chip8, 0x8F01.to_u16)
+        chip8.v[0xF].should eq(0)
+      end
     end
 
     describe "AND" do
@@ -140,8 +156,8 @@ module Tchipi8
         chip8 = Chip8.new(DummyIOController.new)
         rng = Random.new
 
-        (0x0..0xF).each do |register_x|
-          (0x0..0xF).each do |register_y|
+        (0x0..0xE).each do |register_x|
+          (0x0..0xE).each do |register_y|
             chip8.v[register_x] = value_x = rng.rand(256).to_u8
             chip8.v[register_y] = value_y = register_x == register_y ? value_x : rng.rand(256).to_u8
 
@@ -152,15 +168,28 @@ module Tchipi8
           end
         end
       end
-    end
+
+     it "resets VF to 0" do
+        chip8 = Chip8.new(DummyIOController.new)
+
+        chip8.v[0x0] = 0x69
+        chip8.v[0xF] = 0x42
+        Opcodes::AND.operation.call(chip8, 0x80F2.to_u16)
+        chip8.v[0xF].should eq(0)
+
+        chip8.v[0xF] = 0x42
+        Opcodes::AND.operation.call(chip8, 0x8F02.to_u16)
+        chip8.v[0xF].should eq(0)
+     end
+   end
 
     describe "XOR" do
       it "sets vX to value of bitwise XOR between vX and vY" do
         chip8 = Chip8.new(DummyIOController.new)
         rng = Random.new
 
-        (0x0..0xF).each do |register_x|
-          (0x0..0xF).each do |register_y|
+        (0x0..0xE).each do |register_x|
+          (0x0..0xE).each do |register_y|
             chip8.v[register_x] = value_x = rng.rand(256).to_u8
             chip8.v[register_y] = value_y = register_x == register_y ? value_x : rng.rand(256).to_u8
 
@@ -170,6 +199,19 @@ module Tchipi8
             chip8.v[register_x].should eq(value_x ^ value_y)
           end
         end
+      end
+
+      it "resets VF to 0" do
+        chip8 = Chip8.new(DummyIOController.new)
+
+        chip8.v[0x0] = 0x69
+        chip8.v[0xF] = 0x42
+        Opcodes::XOR.operation.call(chip8, 0x80F3.to_u16)
+        chip8.v[0xF].should eq(0)
+
+        chip8.v[0xF] = 0x42
+        Opcodes::XOR.operation.call(chip8, 0x8F03.to_u16)
+        chip8.v[0xF].should eq(0)
       end
     end
 
@@ -261,7 +303,7 @@ module Tchipi8
         end
       end
 
-      it "sets vF to 0 when there is no underflow" do
+      it "sets vF to 1 when there is no underflow" do
         chip8 = Chip8.new(DummyIOController.new)
         rng = Random.new
 
@@ -273,7 +315,7 @@ module Tchipi8
             instruction = (0x8005 | register_x << 8 | register_y << 4).to_u16
             Opcodes::SUBV.operation.call(chip8, instruction)
 
-            chip8.v[0xF].should eq(0)
+            chip8.v[0xF].should eq(1)
           end
         end
       end
@@ -297,7 +339,7 @@ module Tchipi8
         end
       end
 
-      it "sets vF to 1 on underflow" do
+      it "sets vF to 0 on underflow" do
         chip8 = Chip8.new(DummyIOController.new)
         rng = Random.new
 
@@ -311,7 +353,7 @@ module Tchipi8
             instruction = (0x8005 | register_x << 8 | register_y << 4).to_u16
             Opcodes::SUBV.operation.call(chip8, instruction)
 
-            chip8.v[0xF].should eq(1)
+            chip8.v[0xF].should eq(0)
           end
         end
       end
@@ -335,7 +377,7 @@ module Tchipi8
         end
       end
 
-      it "sets vF to 0 when there is no underflow" do
+      it "sets vF to 1 when there is no underflow" do
         chip8 = Chip8.new(DummyIOController.new)
         rng = Random.new
 
@@ -347,7 +389,7 @@ module Tchipi8
             instruction = (0x8007 | register_x << 8 | register_y << 4).to_u16
             Opcodes::RSUBV.operation.call(chip8, instruction)
 
-            chip8.v[0xF].should eq(0)
+            chip8.v[0xF].should eq(1)
           end
         end
       end
@@ -371,7 +413,7 @@ module Tchipi8
         end
       end
 
-      it "sets vF to 1 on underflow" do
+      it "sets vF to 0 on underflow" do
         chip8 = Chip8.new(DummyIOController.new)
         rng = Random.new
 
@@ -386,7 +428,7 @@ module Tchipi8
             instruction = (0x8005 | register_x << 8 | register_y << 4).to_u16
             Opcodes::RSUBV.operation.call(chip8, instruction)
 
-            chip8.v[0xF].should eq(1)
+            chip8.v[0xF].should eq(0)
           end
         end
       end
@@ -807,26 +849,28 @@ module Tchipi8
 
       it "sets vF to the bit shifted out" do
         chip8 = Chip8.new(DummyIOController.new)
-        rng = Random.new
 
         (0..0xE).each do |x|
           y = x + 1
-          chip8.v[y] = rng.rand(0xFF).to_u8
 
+          chip8.v[y] = 0x89
           Opcodes::LSHIFT.operation.call(chip8, (0x8006 | x << 8 | y << 4).to_u16)
-          chip8.v[0xF].should eq(chip8.v[y] & 0x80)
+          chip8.v[0xF].should eq(1)
+
+          chip8.v[y] = 0x69
+          Opcodes::LSHIFT.operation.call(chip8, (0x8006 | x << 8 | y << 4).to_u16)
+          chip8.v[0xF].should eq(0)
         end
       end
 
       it "overwrites vF with shifted bit even when vF is destination" do
         chip8 = Chip8.new(DummyIOController.new)
-        rng = Random.new
 
         (0..0xE).each do |y|
-          chip8.v[y] = rng.rand(0xFF).to_u8
+          chip8.v[y] = 0x69
 
           Opcodes::LSHIFT.operation.call(chip8, (0x8006 | 0xF << 8 | y << 4).to_u16)
-          chip8.v[0xF].should eq(chip8.v[y] & 0x80)
+          chip8.v[0xF].should eq(0)
         end
       end
     end
@@ -864,7 +908,6 @@ module Tchipi8
               instruction = (0xD000 | x << 8 | y << 4 | sprite.size).to_u16
 
               Opcodes::DRAW.operation.call(chip8, instruction)
-              # io.render_display
 
               sprite.each_with_index do |pixmap, row|
                 (0..7).each do |col|
@@ -891,15 +934,14 @@ module Tchipi8
           instruction = (0xD010 | i + 1).to_u16
 
           Opcodes::DRAW.operation.call(chip8, instruction)
-          # io.render_display
           io.pixels
-            .map { |row| row[0...8].select(&.on?).size }
+            .map { |row| row.select(&.on?).size }
             .reduce { |a, b| a + b }
             .should eq((i + 1) * 8)
         end
       end
 
-      it "sets vF if any set pixel is unset" do
+      it "sets vF if any set pixel is overwritten" do
         io = DummyIOController.new
         chip8 = Chip8.new(io)
         rng = Random.new
@@ -911,14 +953,12 @@ module Tchipi8
         chip8.v[0x2] = 0
         instruction = (0xD000 | 0x4 << 8 | 0x2 << 4 | 0x2).to_u16
         Opcodes::DRAW.operation.call(chip8, instruction)
-
-        chip8.memory[chip8.i] = 0x00
         Opcodes::DRAW.operation.call(chip8, instruction)
 
         chip8.v[0xF].should eq(1)
       end
 
-      it "unsets vF if no pixels are unset" do
+      it "unsets vF if no pixels are overwritten" do
         io = DummyIOController.new
         chip8 = Chip8.new(io)
         rng = Random.new
@@ -928,14 +968,37 @@ module Tchipi8
         chip8.memory[chip8.i + 1] = 0xFF
         chip8.v[0x4] = 0
         chip8.v[0x2] = 0
-        instruction = (0xD000 | 0x4 << 8 | 0x2 << 4 | 0x2).to_u16
-        Opcodes::DRAW.operation.call(chip8, instruction)
+        Opcodes::DRAW.operation.call(chip8, (0xD000 | 0x4 << 8 | 0x2 << 4 | 0x2).to_u16)
 
         chip8.memory[chip8.i] = 0x00
-        Opcodes::DRAW.operation.call(chip8, instruction) # This should set vF
-        Opcodes::DRAW.operation.call(chip8, instruction) # Unset vF
+        chip8.memory[chip8.i + 1] = 0x00
+        chip8.memory[chip8.i + 2] = 0xFF
+        Opcodes::DRAW.operation.call(chip8, (0xD000 | 0x4 << 8 | 0x2 << 4 | 0x3).to_u16)
+        # io.render_display
 
         chip8.v[0xF].should eq(0)
+      end
+
+      it "clips sprites drawn at the edge" do
+        io = DummyIOController.new
+        chip8 = Chip8.new(io)
+
+        chip8.i = 0x100
+        chip8.memory[0x100] = 0xFF
+        chip8.memory[0x101] = 0xFF
+        chip8.memory[0x102] = 0xFF
+        chip8.memory[0x103] = 0xFF
+
+        chip8.v[0x6] = (IO::CHIP8_DISPLAY_WIDTH - 4).to_u8
+        chip8.v[0x9] = (IO::CHIP8_DISPLAY_HEIGHT - 4).to_u8
+
+        instruction = (0xD000 | 0x6 << 8 | 0x9 << 4 | 0x4).to_u16
+        Opcodes::DRAW.operation.call(chip8, instruction)
+
+        io.pixels
+          .map { |row| row.select(&.on?).size }
+          .reduce { |a, b| a + b }
+          .should eq(16)
       end
     end
 

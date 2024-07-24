@@ -14,7 +14,6 @@ module Tchipi8
 
   io_controller = IO::SDLController.new
   chip8 = Chip8.new(io_controller)
-  chip8.io.clear_pixels
 
   if ARGV.empty?
     Log.error { "No program file specified" }

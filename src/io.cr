@@ -17,10 +17,18 @@ module Tchipi8
       end
     end
 
+    enum KeyState
+      Pressed
+      Released
+    end
+
+    alias Key = NamedTuple(key: UInt8, state: KeyState)
+
     module Controller
       abstract def clear_pixels : Nil
       abstract def set_pixel(x : Int, y : Int, state : PixelState) : Nil
-      abstract def read_key : UInt8
+      abstract def flush_pixels : Nil
+      abstract def read_key : Key?
       abstract def sync : Nil
     end
 
@@ -34,6 +42,8 @@ module Tchipi8
       SDL_DISPLAY_HEIGHT = SDL_DISPLAY_WIDTH / 2
       SPRITE_WIDTH = SDL_DISPLAY_WIDTH / CHIP8_DISPLAY_WIDTH
       SPRITE_HEIGHT = SDL_DISPLAY_HEIGHT / CHIP8_DISPLAY_HEIGHT
+
+      @current_key : Key?
 
       def initialize
         if LibSDL.init(LibSDL::INIT_VIDEO) != 0
@@ -53,12 +63,17 @@ module Tchipi8
           Log.error { "Could not initialize SDL window: #{String.new(LibSDL.get_error())}" }
           raise "Could not initialize display"
         end
+
+        @current_key = nil
+      end
+
+      def flush_pixels : Nil
+        LibSDL.update_window_surface(@window)
       end
 
       def clear_pixels : Nil
         Log.debug { "Clearing display" }
         LibSDL.fill_rect(surface, nil, rgb(0x00, 0x00, 0x00))
-        LibSDL.update_window_surface(@window)
       end
 
       def set_pixel(x : Int, y : Int, state : PixelState) : Nil
@@ -78,20 +93,23 @@ module Tchipi8
                  in .off? then rgb(0x00, 0x00, 0x00)
                  end
         LibSDL.fill_rect(surface, pointerof(pixel), colour)
-        LibSDL.update_window_surface(@window)
       end
 
-      def read_key : UInt8
-        loop do
-          key = next_event
-          return key unless key.nil?
-        end
+      def read_key : Key?
+        @current_key
       end
 
       def sync : Nil
-        until next_event.nil?
-          # Do nothing
-          Log.debug { "Flushing event queue" }
+        Log.debug { "Sync-ing IO" }
+        @current_key = nil if @current_key.try { |key| key[:state] == KeyState::Released }
+
+        loop do
+          key = next_event
+          break if key.nil?
+
+          if @current_key.nil? || key[:key] == @current_key.try { |v| v[:key] }
+            @current_key = key
+          end
         end
       end
 
@@ -114,11 +132,17 @@ module Tchipi8
         LibSDL.map_rgb(surface.value.format, red, green, black)
       end
 
-      private def next_event : UInt8?
+      private def next_event : Key?
+        Log.debug { "Polling events" }
         while LibSDL.poll_event(out event) != 0
           raise Shutdown.new if event.type == LibSDL::EventType::QUIT.to_i
 
-          next if event.type == LibSDL::EventType::KEYDOWN.to_i
+          state =
+            case event.type
+            when LibSDL::EventType::KEYUP.to_i then KeyState::Released
+            when LibSDL::EventType::KEYDOWN.to_i then KeyState::Pressed
+            else return nil
+            end
 
           key = case event.key.keysym.scancode
                 when LibSDL::Scancode::SCANCODE_1 then 0x01
@@ -139,7 +163,7 @@ module Tchipi8
                 when LibSDL::Scancode::SCANCODE_V then 0x0F
                 end
 
-          return key.to_u8 unless key.nil?
+          return key.nil? ? nil : {key: key.to_u8, state: state}
         end
       end
     end

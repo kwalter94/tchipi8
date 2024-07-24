@@ -117,6 +117,7 @@ module Tchipi8
       x = (instruction & 0x0F00) >> 8
       y = (instruction & 0x00F0) >> 4
       chip8.v[x] |= chip8.v[y]
+      chip8.v[0xF] = 0
     end
 
     # Set vX to result of vX & vY
@@ -124,6 +125,7 @@ module Tchipi8
       x = (instruction & 0x0F00) >> 8
       y = (instruction & 0x00F0) >> 4
       chip8.v[x] &= chip8.v[y]
+      chip8.v[0xF] = 0
     end
 
     # Set vX to result of vX ^ vY
@@ -131,6 +133,7 @@ module Tchipi8
       x = (instruction & 0x0F00) >> 8
       y = (instruction & 0x00F0) >> 4
       chip8.v[x] ^= chip8.v[y]
+      chip8.v[0xF] = 0
     end
 
     # Set vX to result of vX + vY, setting vF to 0 or 1 if overflow or not even if X == F
@@ -150,7 +153,7 @@ module Tchipi8
 
       is_underflowing = chip8.v[x] < chip8.v[y]
       chip8.v[x] = chip8.v[x] &- chip8.v[y]
-      chip8.v[0xF] = (is_underflowing ? 1 : 0).to_u8
+      chip8.v[0xF] = (is_underflowing ? 0 : 1).to_u8
     end
 
     # Set vX to result of vY >> 1, setting vF to shifted out bit even if X == F
@@ -170,7 +173,7 @@ module Tchipi8
 
       is_underflowing = chip8.v[y] < chip8.v[x]
       chip8.v[x] = chip8.v[y] &- chip8.v[x]
-      chip8.v[0xF] = (is_underflowing ? 1 : 0).to_u8
+      chip8.v[0xF] = (is_underflowing ? 0 : 1).to_u8
     end
 
     # Set vX to result of vY << 1, setting vF to shifted out bit even if X == F
@@ -178,7 +181,7 @@ module Tchipi8
       x = (instruction & 0x0F00) >> 8
       y = (instruction & 0x00F0) >> 4
 
-      shifted_out = chip8.v[y] & 0x80
+      shifted_out = (chip8.v[y] & 0x80) >> 7
       chip8.v[x] = chip8.v[y] << 1
       chip8.v[0xF] = shifted_out
     end
@@ -222,23 +225,21 @@ module Tchipi8
       (0...n).each do |row|
         pixmap = chip8.memory[chip8.i + row]
 
-        (0..7).each do |col|
-          pixel = (pixmap >> 7 - col) & 0x01
+        (0...8).each do |col|
+          pixel = (pixmap >> 8 - col - 1) & 0x01
 
           adjusted_col = chip8.v[x].to_i32 + col
           adjusted_row = chip8.v[y].to_i32 + row
 
           if adjusted_row >= chip8.pixels.size || adjusted_col >= chip8.pixels[0].size
             Log.warn { "Attempted to write out of bounds: (#{adjusted_col}, #{adjusted_row})" }
-            next
+            break
           end
 
-          next if chip8.pixels[adjusted_row][adjusted_col] == pixel
+          has_unset_pixel = true if pixel == 1 && chip8.pixels[adjusted_row][adjusted_col] == 1
 
-          has_unset_pixel = true if pixel.zero?
-
-          chip8.pixels[adjusted_row][adjusted_col] = pixel
-          dirty_pixels << {adjusted_col, adjusted_row}
+          chip8.pixels[adjusted_row][adjusted_col] ^= pixel
+          dirty_pixels << {adjusted_col, adjusted_row} if pixel == 1
         end
       end
 
@@ -252,12 +253,28 @@ module Tchipi8
       end
     end
 
-    # Skip next opcode if key pressed matches lower 4 bits vX
+    # Skip next opcode if key pressed matches lower 4 bits of vX
     SKIPIFKEY = define_opcode(0xEF9E.to_u16, "skipifkey", 73) do |chip8, instruction|
+      x = (0x0F00 & instruction) >> 8
+
+      chip8.io.read_key.try do |key|
+        pp({:skipifkey, chip8.v[x] & 0x0F, key})
+        if (key[:key] == chip8.v[x] & 0x0F) && key[:state].pressed?
+          chip8.pc += 2
+        end
+      end
     end
 
     # Skip next opcode if lower 4 bits of vX don't match key pressed
     SKIPIFNKEY = define_opcode(0xEFA1.to_u16, "skipifnkey", 73) do |chip8, instruction|
+      x = (0x0F00 & instruction) >> 8
+
+      chip8.io.read_key.try do |key|
+        pp({:skipifnkey, chip8.v[x] & 0x0F, key})
+        if (key[:key] != chip8.v[x] & 0x0F) && key[:state].pressed?
+          chip8.pc += 2
+        end
+      end
     end
 
     # Copy delay timer value to vX
@@ -268,6 +285,15 @@ module Tchipi8
 
     # Read next key pressed, write it to vX (clear screen in Megachip mode)
     READKEY = define_opcode(0xFF0A.to_u16, "readkey", 0) do |chip8, instruction|
+      chip8.pc -= 2 # Repeat instruction until a key is released
+
+      chip8.io.read_key.try do |key|
+        next unless key[:state].released?
+
+        x = (0x0F00 & instruction) >> 8
+        chip8.v[x] = key[:key]
+        chip8.pc += 2 # Restore PC, we got our key
+     end
     end
 
     # Set delay timer from vX

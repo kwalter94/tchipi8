@@ -83,6 +83,7 @@ module Tchipi8
         instruction = next_instruction
         opcode = Decoder.decode(instruction)
         execute_instruction(opcode, instruction)
+        @io.flush_pixels
       end
     end
 
@@ -91,8 +92,8 @@ module Tchipi8
       return if Time.monotonic - @last_tick < TICK_PERIOD
 
       Log.debug { "Synchronising sound and delay timers" }
-      @delay_timer -= 1 if delay_timer > 0
-      @sound_timer -= 1 if sound_timer > 0
+      @delay_timer -= 1 if @delay_timer > 0
+      @sound_timer -= 1 if @sound_timer > 0
       @last_tick = Time.monotonic
     end
 
