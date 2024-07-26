@@ -74,8 +74,6 @@ module Tchipi8
         bytes_loaded = offset
       end
 
-      # @memory[0x1FF] = 3
-
       Log.debug { "Loaded #{bytes_loaded} bytes program" }
     end
 
