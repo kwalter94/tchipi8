@@ -38,6 +38,13 @@ Plenty of ROMs available on the Internet, just make sure that they
 are compatible with COSMAC VIP CHIP-8 (avoid SUPER-CHIP or any other CHIP
 with a fancy prefix).
 
+The CHIP-8 Keypad is mapped to the Keyboard as follows:
+
+    1   2   3   4       1   2   3   C
+    q   w   e   r   =>  4   5   6   D
+    a   s   d   f       7   8   9   E
+    z   x   c   v       A   0   B   F
+
 ## Development
 
 - Ensure you have SDL2 development libraries installed (see the Installation / Building
