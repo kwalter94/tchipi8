@@ -46,6 +46,8 @@ module Tchipi8
     property delay_timer : UInt8
     property memory : Array(UInt8)
     property stack : Array(UInt16)
+    property hault : Bool
+    property custom_flags : Hash(Symbol, Bool)
 
     def initialize(@io)
       @pixels = DISPLAY_HEIGHT.times.map { Array(UInt8).new(DISPLAY_WIDTH, 0) }.to_a
@@ -57,6 +59,8 @@ module Tchipi8
       @memory = Array(UInt8).new(MAX_RAM, 0)
       @stack = Array(UInt16).new
       @last_tick = Time::Span.zero
+      @hault = false
+      @custom_flags = {} of Symbol => Bool
 
       self.load_font
     end
@@ -70,6 +74,8 @@ module Tchipi8
         bytes_loaded = offset
       end
 
+      # @memory[0x1FF] = 3
+
       Log.debug { "Loaded #{bytes_loaded} bytes program" }
     end
 
@@ -79,28 +85,26 @@ module Tchipi8
 
       loop do
         @io.sync
-        sync_timers
+
         instruction = next_instruction
         opcode = Decoder.decode(instruction)
         execute_instruction(opcode, instruction)
+
+        ticks = (Time.monotonic - last_tick).nanoseconds // TICK_PERIOD.nanoseconds
+        next if ticks.zero?
+
+        Log.debug { "Synchronising timers: +#{ticks} ticks" }
+        @delay_timer -= ticks > @delay_timer ? @delay_timer : ticks
+        @sound_timer -= ticks > @sound_timer ? @sound_timer : ticks
+        last_tick = Time.monotonic
         @io.flush_pixels
       end
-    end
-
-    private def sync_timers : Nil
-      @last_tick = Time.monotonic if @last_tick.zero?
-      return if Time.monotonic - @last_tick < TICK_PERIOD
-
-      Log.debug { "Synchronising sound and delay timers" }
-      @delay_timer -= 1 if @delay_timer > 0
-      @sound_timer -= 1 if @sound_timer > 0
-      @last_tick = Time.monotonic
     end
 
     private def next_instruction : UInt16
       Log.debug { "Fetching instruction at #{@pc.to_s(16)}" }
       instruction = (memory[@pc].to_u16 << 8) | memory[@pc + 1]
-      @pc += 2
+      @pc += 2 unless @hault
 
       instruction
     end
@@ -117,10 +121,17 @@ module Tchipi8
       start_time = Time.monotonic
       opcode.operation.call(self, instruction)
       time_elapsed = Time.monotonic - start_time
-      sleep_time = opcode.micros > time_elapsed ? opcode.micros - time_elapsed : Time::Span.zero
-      sleep(sleep_time) unless sleep_time.zero?
+      if opcode.micros < time_elapsed
+        Log.warn {
+          "Operation (#{opcode.name}) took longer than expected: #{time_elapsed} instead of #{opcode.micros}"
+        }
+        return
+      end
+
+      sleep_time = opcode.micros - time_elapsed
+      sleep(sleep_time)
       Log.debug {
-        "Execution time: #{(time_elapsed + sleep_time).to_f * 1_000_000} micros"
+        "#{opcode.name} executed in #{(time_elapsed + sleep_time).microseconds} micros"
       }
     end
   end

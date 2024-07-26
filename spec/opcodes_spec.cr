@@ -895,8 +895,7 @@ module Tchipi8
         chip8 = Chip8.new(io)
         rng = Random.new
 
-        sprite = [0x81, 0x42, 0x24, 0x18] of UInt8
-        sprite.each_with_index { |row, i| chip8.memory[i] = row }
+        sprite = chip8.memory[0...4] = [0x81, 0x42, 0x24, 0x18] of UInt8
         chip8.i = 0
 
         [{0, 0}, {32, 16}, {56, 24}].each do |sprite_x, sprite_y|

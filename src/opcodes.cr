@@ -60,12 +60,14 @@ module Tchipi8
     # Jump to address
     JMP = define_opcode(0x1FFF.to_u16, "jmp", 105) do |chip8, instruction|
       chip8.pc = instruction & 0x0FFF
+      Log.debug { "Jumped to #{chip8.pc.to_s(16)}" }
     end
 
     # Push current address onto stack and call subroutine
     CALL = define_opcode(0x2FFF.to_u16, "call", 105) do |chip8, instruction|
       chip8.stack.push(chip8.pc)
       chip8.pc = instruction & 0x0FFF
+      Log.debug { "Jumped to #{chip8.pc.to_s(16)}" }
     end
 
     # Skip next opcode if vX register is equal to k
@@ -213,6 +215,8 @@ module Tchipi8
       chip8.v[x] = (Random.new.rand(0xFF) & n).to_u8
     end
 
+    @@sightings = 0
+
     # Draw sprite at position [vX, vY] using sprite data from location I[0..N]
     DRAW = define_opcode(0xDFFF.to_u16, "draw", 22734) do |chip8, instruction|
       x = (0x0F00 & instruction) >> 8
@@ -236,14 +240,17 @@ module Tchipi8
             break
           end
 
-          has_unset_pixel = true if pixel == 1 && chip8.pixels[adjusted_row][adjusted_col] == 1
+          if pixel == 1 && chip8.pixels[adjusted_row][adjusted_col] == 1
+            has_unset_pixel = true
+          end
 
           chip8.pixels[adjusted_row][adjusted_col] ^= pixel
-          dirty_pixels << {adjusted_col, adjusted_row} if pixel == 1
+          dirty_pixels << {adjusted_col, adjusted_row}
         end
       end
 
-      chip8.v[0xF] = has_unset_pixel ? 1.to_u8 : 0.to_u8
+      chip8.v[0xF] = 1 if has_unset_pixel
+
       dirty_pixels.each do |col, row|
         chip8.io.set_pixel(
           col,
@@ -258,7 +265,6 @@ module Tchipi8
       x = (0x0F00 & instruction) >> 8
 
       chip8.io.read_key.try do |key|
-        pp({:skipifkey, chip8.v[x] & 0x0F, key})
         if (key[:key] == chip8.v[x] & 0x0F) && key[:state].pressed?
           chip8.pc += 2
         end
@@ -269,11 +275,9 @@ module Tchipi8
     SKIPIFNKEY = define_opcode(0xEFA1.to_u16, "skipifnkey", 73) do |chip8, instruction|
       x = (0x0F00 & instruction) >> 8
 
-      chip8.io.read_key.try do |key|
-        pp({:skipifnkey, chip8.v[x] & 0x0F, key})
-        if (key[:key] != chip8.v[x] & 0x0F) && key[:state].pressed?
-          chip8.pc += 2
-        end
+      key = chip8.io.read_key
+      if key.nil? || (key[:key] != (chip8.v[x] & 0x0F) && key[:state].pressed?)
+        chip8.pc += 2
       end
     end
 
@@ -285,15 +289,24 @@ module Tchipi8
 
     # Read next key pressed, write it to vX (clear screen in Megachip mode)
     READKEY = define_opcode(0xFF0A.to_u16, "readkey", 0) do |chip8, instruction|
-      chip8.pc -= 2 # Repeat instruction until a key is released
+      unless chip8.hault
+        chip8.pc -= 2
+        chip8.hault = true
+        chip8.custom_flags[:key_read] = false
+      end
 
-      chip8.io.read_key.try do |key|
-        next unless key[:state].released?
+      key = chip8.io.read_key
 
+      if key && key[:state].released?
         x = (0x0F00 & instruction) >> 8
         chip8.v[x] = key[:key]
-        chip8.pc += 2 # Restore PC, we got our key
-     end
+        chip8.custom_flags[:key_read] = true
+        chip8.sound_timer = 1
+      elsif chip8.custom_flags[:key_read] && chip8.sound_timer == 0
+        chip8.hault = false
+        chip8.pc += 2
+        chip8.custom_flags.delete(:key_read)
+      end
     end
 
     # Set delay timer from vX

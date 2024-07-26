@@ -10,7 +10,7 @@ module Tchipi8
   VERSION = "0.1.0"
 
   Log = ::Log.for("tchipi8")
-  Log.level = :debug
+  Log.level = ENV.fetch("DEBUG", nil).nil? ? ::Log::Severity::Info : ::Log::Severity::Debug
 
   io_controller = IO::SDLController.new
   chip8 = Chip8.new(io_controller)
