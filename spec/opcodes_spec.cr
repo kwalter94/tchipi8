@@ -978,6 +978,26 @@ module Tchipi8
         chip8.v[0xF].should eq(0)
       end
 
+      it "wraps starting {x, y} if out of bounds" do
+        io = DummyIOController.new
+        chip8 = Chip8.new(io)
+
+        sprite = [0xFF, 0xFF, 0xFF, 0xFF] of UInt8
+        chip8.i = 0x100
+        chip8.memory[chip8.i...(chip8.i + sprite.size)] = sprite
+
+        chip8.v[0x4] = IO::CHIP8_DISPLAY_WIDTH.to_u8
+        chip8.v[0x2] = IO::CHIP8_DISPLAY_HEIGHT.to_u8
+        Opcodes::DRAW.operation.call(chip8, (0xD000 | 0x4 << 8 | 0x2 << 4 | sprite.size).to_u16)
+        # io.render_display
+
+        (0...sprite.size).each do |y|
+          (0...8).each do |x|
+            io.pixels[y][x].should eq(IO::PixelState::On)
+          end
+        end
+      end
+
       it "clips sprites drawn at the edge" do
         io = DummyIOController.new
         chip8 = Chip8.new(io)

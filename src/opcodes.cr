@@ -215,8 +215,6 @@ module Tchipi8
       chip8.v[x] = (Random.new.rand(0xFF) & n).to_u8
     end
 
-    @@sightings = 0
-
     # Draw sprite at position [vX, vY] using sprite data from location I[0..N]
     DRAW = define_opcode(0xDFFF.to_u16, "draw", 22734) do |chip8, instruction|
       x = (0x0F00 & instruction) >> 8
@@ -226,14 +224,17 @@ module Tchipi8
       dirty_pixels = [] of Tuple(Int32, Int32)
       has_unset_pixel = false
 
+      start_x = (chip8.v[x] % IO::CHIP8_DISPLAY_WIDTH).to_i32
+      start_y = (chip8.v[y] % IO::CHIP8_DISPLAY_HEIGHT).to_i32
+
       (0...n).each do |row|
         pixmap = chip8.memory[chip8.i + row]
 
         (0...8).each do |col|
           pixel = (pixmap >> 8 - col - 1) & 0x01
 
-          adjusted_col = chip8.v[x].to_i32 + col
-          adjusted_row = chip8.v[y].to_i32 + row
+          adjusted_col = start_x + col
+          adjusted_row = start_y + row
 
           if adjusted_row >= chip8.pixels.size || adjusted_col >= chip8.pixels[0].size
             Log.warn { "Attempted to write out of bounds: (#{adjusted_col}, #{adjusted_row})" }
