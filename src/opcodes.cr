@@ -216,7 +216,7 @@ module Tchipi8
     end
 
     # Draw sprite at position [vX, vY] using sprite data from location I[0..N]
-    DRAW = define_opcode(0xDFFF.to_u16, "draw", 22734) do |chip8, instruction|
+    DRAW = define_opcode(0xDFFF.to_u16, "draw", 8333) do |chip8, instruction|
       x = (0x0F00 & instruction) >> 8
       y = (0x00F0 & instruction) >> 4
       n = 0x000F & instruction
@@ -259,6 +259,8 @@ module Tchipi8
           chip8.pixels[row][col].zero? ? IO::PixelState::Off : IO::PixelState::On
         )
       end
+
+      chip8.io.flush_pixels
     end
 
     # Skip next opcode if key pressed matches lower 4 bits of vX

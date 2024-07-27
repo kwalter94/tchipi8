@@ -95,7 +95,6 @@ module Tchipi8
         @delay_timer -= ticks > @delay_timer ? @delay_timer : ticks
         @sound_timer -= ticks > @sound_timer ? @sound_timer : ticks
         last_tick = Time.monotonic
-        @io.flush_pixels
       end
     end
 
