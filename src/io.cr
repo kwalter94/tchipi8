@@ -101,7 +101,9 @@ module Tchipi8
 
       def sync : Nil
         Log.debug { "Sync-ing IO" }
-        @current_key = nil if @current_key.try { |key| key[:state] == KeyState::Released }
+        if @current_key.try { |key| key[:state] == KeyState::Released }
+          @current_key = nil
+        end
 
         loop do
           key = next_event

@@ -259,8 +259,6 @@ module Tchipi8
           chip8.pixels[row][col].zero? ? IO::PixelState::Off : IO::PixelState::On
         )
       end
-
-      chip8.io.flush_pixels
     end
 
     # Skip next opcode if key pressed matches lower 4 bits of vX

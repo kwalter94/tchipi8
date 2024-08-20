@@ -13,6 +13,8 @@ module Tchipi8
   FONT_ADDRESS = 0x050.to_u16 # Start address of font
   PROGRAM_ADDRESS = 0x200.to_u16 # Start address of program
 
+  MEGAHERTZ = 1000
+
   # Sourced from https://tobiasvl.github.io/blog/write-a-chip-8-emulator/#font
   FONT = [
     0xF0, 0x90, 0x90, 0x90, 0xF0, # 0
@@ -35,7 +37,7 @@ module Tchipi8
 
 
   class Chip8
-    TICK_PERIOD = Time::Span.new(nanoseconds: 1_000_000_000 // 60)
+    TIMER_TICK_PERIOD = Time::Span.new(nanoseconds: 1_000_000_000 // 60)
 
     property io : IO::Controller
     property pixels : Array(Array(UInt8))
@@ -47,7 +49,7 @@ module Tchipi8
     property memory : Array(UInt8)
     property stack : Array(UInt16)
     property hault : Bool
-    property custom_flags : Hash(Symbol, Bool)
+    property custom_flags : Hash(Symbol, Bool) # Used for storing state of instructions like READKEY
 
     def initialize(@io)
       @pixels = DISPLAY_HEIGHT.times.map { Array(UInt8).new(DISPLAY_WIDTH, 0) }.to_a
@@ -77,9 +79,10 @@ module Tchipi8
       Log.debug { "Loaded #{bytes_loaded} bytes program" }
     end
 
-    def run : Nil
+    def run(clock_mhz = 10) : Nil
       Log.debug { "Running Chip8..." }
-      last_tick = Time.monotonic
+      cycle_period = Time::Span.new(nanoseconds: 1_000_000_000 // (clock_mhz * MEGAHERTZ))
+      last_clock_tick = last_timer_tick = Time.monotonic
 
       loop do
         @io.sync
@@ -88,13 +91,18 @@ module Tchipi8
         opcode = Decoder.decode(instruction)
         execute_instruction(opcode, instruction)
 
-        ticks = (Time.monotonic - last_tick).nanoseconds // TICK_PERIOD.nanoseconds
-        next if ticks.zero?
+        timer_ticks = (Time.monotonic - last_timer_tick).nanoseconds // TIMER_TICK_PERIOD.nanoseconds
+        if timer_ticks > 0
+          Log.debug { "Synchronising timers: +#{timer_ticks} ticks" }
+          @io.flush_pixels
+          @delay_timer -= timer_ticks > @delay_timer ? @delay_timer : timer_ticks
+          @sound_timer -= timer_ticks > @sound_timer ? @sound_timer : timer_ticks
+          last_timer_tick = Time.monotonic
+        end
 
-        Log.debug { "Synchronising timers: +#{ticks} ticks" }
-        @delay_timer -= ticks > @delay_timer ? @delay_timer : ticks
-        @sound_timer -= ticks > @sound_timer ? @sound_timer : ticks
-        last_tick = Time.monotonic
+        time_elapsed = Time.monotonic - last_clock_tick
+        sleep(cycle_period - time_elapsed) if time_elapsed < cycle_period
+        last_clock_tick = Time.monotonic
       end
     end
 
@@ -118,9 +126,11 @@ module Tchipi8
       start_time = Time.monotonic
       opcode.operation.call(self, instruction)
       time_elapsed = Time.monotonic - start_time
+      return if opcode.micros.zero?
+
       if opcode.micros < time_elapsed
         Log.warn {
-          "Operation (#{opcode.name}) took longer than expected: #{time_elapsed} instead of #{opcode.micros}"
+          "Slow instruction #{opcode.name} (took #{time_elapsed} instead of #{opcode.micros})"
         }
         return
       end
